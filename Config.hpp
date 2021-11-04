@@ -6,8 +6,7 @@
 #define CONFIG_HPP
 
 
-class Config:
-{
+class Config{
 
 };
 
