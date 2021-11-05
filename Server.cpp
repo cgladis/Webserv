@@ -21,4 +21,9 @@ void Server::processingRequests() {
     fd = accept(ListeningSocket.getfd(), &inputSocket, &len);
     if (fd < 0)
         throw std::runtime_error("Error accept");
+
+    char buff[1000];
+    unsigned long n = recv(fd, buff, 1000, 0);
+    std::cout << "message " << n << " byte:" << std::endl << buff;
+
 }
