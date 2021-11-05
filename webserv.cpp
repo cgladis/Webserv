@@ -7,9 +7,14 @@
 
 int main(){
 
-	Server WebServer(8000, "127.0.0.1");
-    WebServer.run();
-    WebServer.processingRequests();
-
+    try {
+        Server WebServer(8000, "127.0.0.1");
+        WebServer.run();
+        WebServer.processingRequests();
+    }
+    catch (std::runtime_error &ex)
+    {
+        std::cout << "ERROR - " << ex.what() << std::endl;
+    }
     return 0;
 }
