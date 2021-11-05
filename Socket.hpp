@@ -21,6 +21,8 @@ public:
 
 	void bind(int port);
 	void bind(int port, IPAddress ipAddress);
+    void listen(int qlen);
+    int getfd();
 
 private:
 	int fd;

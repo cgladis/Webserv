@@ -3,13 +3,13 @@
 //
 
 #include <iostream>
-#include "Config.hpp"
-#include "Socket.hpp"
-
+#include "Server.hpp"
 
 int main(){
 
-	Socket ServerSocket;
-	ServerSocket.bind(80000);
+	Server WebServer(80000, "127.0.0.1");
+    WebServer.run();
+    WebServer.processingRequests();
+
     return 0;
 }

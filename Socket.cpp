@@ -17,12 +17,9 @@ void Socket::bind(int port) {
 	socketAddr.sin_family = AF_INET;
 	socketAddr.sin_port = htons(port);
 	socketAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-//	if (!inet_aton("127.0.0.1", &socketAddr.sin_addr)){
-//		std::cout << "incorrect ip" << std::endl;
-//	}
-	std::cout << "bind result = "
-			<< ::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr),
-					  sizeof(socketAddr)) << std::endl;
+    if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
+        throw std::runtime_error("Bind error!");
+    std::cout << "bind Ok" << std::endl;
 }
 
 void Socket::bind(int port, IPAddress ipAddress) {
@@ -30,12 +27,14 @@ void Socket::bind(int port, IPAddress ipAddress) {
 	socketAddr.sin_family = AF_INET;
 	socketAddr.sin_port = htons(port);
 	socketAddr.sin_addr.s_addr = ipAddress.inet_addr();
-//	if (!inet_aton("127.0.0.1", &socketAddr.sin_addr)){
-//		std::cout << "incorrect ip" << std::endl;
-//	}
-	std::cout << "bind result = "
-			  << ::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr),
-						sizeof(socketAddr)) << std::endl;
+    if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
+        throw std::runtime_error("Bind error!");
+    std::cout << "bind Ok, port: " << socketAddr.sin_port << std::endl;
+}
+
+void Socket::listen(int qlen) {
+	if (::listen(fd, qlen) != 0)
+		throw std::runtime_error("Error listen");
 }
 
 
@@ -43,4 +42,8 @@ void Socket::bind(int port, IPAddress ipAddress) {
 Socket::~Socket() {
 	close(fd);
 
+}
+
+int Socket::getfd() {
+	return fd;
 }

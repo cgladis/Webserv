@@ -6,6 +6,8 @@
 #define IPADDRESS_HPP
 
 #include <iostream>
+#include <string>
+#include <regex>
 #include <arpa/inet.h>
 
 class IPAddress
@@ -17,6 +19,7 @@ public:
 
 private:
 	std::string stringIP;
+	void checkIP();
 
 
 };
