@@ -7,7 +7,7 @@
 
 #include "Socket.hpp"
 #include "Config.hpp"
-#include "Client.hpp"
+#include "Session.hpp"
 #include <iostream>
 #include <vector>
 
@@ -18,12 +18,12 @@ public:
     void init();
     void run();
     void connect();
-    void getRequest();
+//    void getRequest();
 
 private:
     Socket listeningSocket;
     int qlen;
-    std::vector<Client> clients;
+    std::vector<Session> clients;
     bool exit;
 };
 

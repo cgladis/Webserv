@@ -2,18 +2,20 @@
 // Created by Александр Шоршин on 05.11.2021.
 //
 
-#ifndef CLIENT_HPP
-#define CLIENT_HPP
+#ifndef SESSION_HPP
+#define SESSION_HPP
 
 #include <sys/socket.h> //sockaddr
 #include <iostream>
 
+#define BUFF_SIZE 100
 
-class Client {
+class Session {
 public:
-    Client(int fd, sockaddr socket);
+    Session(int fd, sockaddr socket);
 
     void getRequest();
+    void sendAnswer();
     int get_fd() const;
 
 private:

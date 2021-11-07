@@ -51,8 +51,12 @@ void Server::run() {
             if (FD_ISSET(clients[i].get_fd(), &readfds)){
                 clients[i].getRequest();
             }
+            if (FD_ISSET(clients[i].get_fd(), &writefds)){
+                clients[i].sendAnswer();
+            }
+
         }
-        getRequest();
+//        getRequest();
     }
 
 }
@@ -65,14 +69,14 @@ void Server::connect() {
     socklen_t len;
     fd = accept(listeningSocket.get_fd(), &inputSocket, &len);
     if (fd > 0){
-        clients.push_back(Client(fd, inputSocket));
+        clients.push_back(Session(fd, inputSocket));
     }
 }
 
-void Server::getRequest() {
-
-    for (size_t i = 0; i < clients.size(); ++i) {
-        clients[i].getRequest();
-    }
-
-}
+//void Server::getRequest() {
+//
+//    for (size_t i = 0; i < clients.size(); ++i) {
+//        clients[i].getRequest();
+//    }
+//
+//}

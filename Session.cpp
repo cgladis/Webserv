@@ -2,19 +2,19 @@
 // Created by Александр Шоршин on 05.11.2021.
 //
 
-#include "Client.hpp"
+#include "Session.hpp"
 
-Client::Client(int fd, sockaddr socket): fd(fd), socket(socket) {
+Session::Session(int fd, sockaddr socket): fd(fd), socket(socket) {
     std::cout << "Add client: " << fd << std::endl;
 }
 
-void Client::getRequest() {
+void Session::getRequest() {
 
     (void)socket;
-    char buff[100];
+    char buff[BUFF_SIZE + 1];
     unsigned long length;
 
-    length = recv(fd, buff, 100, 0);
+    length = recv(fd, buff, BUFF_SIZE, 0);
     if (length > 0) {
         buff[length] = 0;
         request += buff;
@@ -26,6 +26,10 @@ void Client::getRequest() {
 
 }
 
-int Client::get_fd() const{
+int Session::get_fd() const{
     return fd;
+}
+
+void Session::sendAnswer() {
+
 }
