@@ -11,25 +11,44 @@ Socket::Socket() {
 
 }
 
-void Socket::bind(int port) {
-
-	sockaddr_in socketAddr;
-	socketAddr.sin_family = AF_INET;
-	socketAddr.sin_port = htons(port);
-	socketAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
-        throw std::runtime_error("Bind error!");
-    std::cout << "bind Ok" << std::endl;
-}
+//void Socket::bind(int port) {
+//
+//	//create sockaddr
+//	sockaddr_in socketAddr;
+//	socketAddr.sin_family = AF_INET;
+//	socketAddr.sin_port = htons(port);
+//	socketAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+//
+//	//delete locked port
+//	int opt = 1;
+//	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+//
+//	//bind port
+//    if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
+//        throw std::runtime_error("Bind error!");
+//    std::cout << "bind Ok" << std::endl;
+//}
 
 void Socket::bind(int port, IPAddress ipAddress) {
+
+	//create sockaddr
 	sockaddr_in socketAddr;
 	socketAddr.sin_family = AF_INET;
 	socketAddr.sin_port = htons(port);
 	socketAddr.sin_addr.s_addr = ipAddress.inet_addr();
+
+	//cancel locked port
+	int opt = 1;
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    //nonblock mode
+//    int flags = fcntl(fd, F_GETFL);
+//    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+
+	//bind port
     if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
-        throw std::runtime_error("Bind error!");
-    std::cout << "bind Ok, port: " << socketAddr.sin_port << std::endl;
+        throw std::runtime_error("Bind error! (Socket::bind)");
+    std::cout << "bind Ok, port: " << ntohs(socketAddr.sin_port) << std::endl;
 }
 
 void Socket::listen(int qlen) {
@@ -44,6 +63,6 @@ Socket::~Socket() {
 
 }
 
-int Socket::getfd() {
+int Socket::get_fd() {
 	return fd;
 }

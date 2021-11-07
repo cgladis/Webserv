@@ -9,8 +9,10 @@ int main(){
 
     try {
         Server WebServer(8000, "127.0.0.1");
+        WebServer.init();
+//        while (1) {
         WebServer.run();
-        WebServer.processingRequests();
+//        }
     }
     catch (std::runtime_error &ex)
     {

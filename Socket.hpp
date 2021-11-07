@@ -9,6 +9,7 @@
 #include <sys/socket.h> //socket
 #include <netinet/in.h> //sockaddr_in
 #include <unistd.h> //close
+#include <fcntl.h> //fcntl
 #include "IPAddress.hpp"
 
 
@@ -19,10 +20,10 @@ public:
 	Socket();
 	~Socket();
 
-	void bind(int port);
+//	void bind(int port);
 	void bind(int port, IPAddress ipAddress);
     void listen(int qlen);
-    int getfd();
+    int get_fd();
 
 private:
 	int fd;

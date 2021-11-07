@@ -7,18 +7,24 @@
 
 #include "Socket.hpp"
 #include "Config.hpp"
+#include "Client.hpp"
 #include <iostream>
+#include <vector>
 
 class Server {
 public:
     Server(int port, std::string ipAddress);
 
+    void init();
     void run();
-    void processingRequests();
+    void connect();
+    void getRequest();
 
 private:
-    Socket ListeningSocket;
+    Socket listeningSocket;
     int qlen;
+    std::vector<Client> clients;
+    bool exit;
 };
 
 
