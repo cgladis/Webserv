@@ -31,7 +31,8 @@ void Server::run() {
             if (clients[i].get_fd() > max_fd)
                 max_fd = clients[i].get_fd();
         }
-        resSelect = select(max_fd + 1, &readfds, NULL, NULL, NULL);
+        resSelect = select(max_fd + 1, &readfds, &writefds, NULL, NULL);
+        std::cout << "SELECT OK " << resSelect << "\n";
         if (resSelect < 1){
             if (errno != EINTR){
                 // select error handling

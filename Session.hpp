@@ -7,6 +7,8 @@
 
 #include <sys/socket.h> //sockaddr
 #include <iostream>
+#include <sstream>
+#include <fstream>
 
 #define BUFF_SIZE 100
 
