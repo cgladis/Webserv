@@ -69,9 +69,7 @@ void Server::run() {
                     clients.erase(clients.begin() + i);
                 }
             }
-
         }
-//        getRequest();
     }
 
 }
@@ -87,11 +85,3 @@ void Server::connect() {
         clients.push_back(Session(fd, inputSocket));
     }
 }
-
-//void Server::getRequest() {
-//
-//    for (size_t i = 0; i < clients.size(); ++i) {
-//        clients[i].getRequest();
-//    }
-//
-//}
