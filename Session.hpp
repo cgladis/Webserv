@@ -9,21 +9,30 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <vector>
+#include <unistd.h>
+#include <string>
 
 #define BUFF_SIZE 100
 
 class Session {
 public:
     Session(int fd, sockaddr socket);
+    ~Session();
 
     void getRequest();
     void sendAnswer();
+    void sendShortAnswer();
+
     int get_fd() const;
+    bool areRespondReady();
 
 private:
     int fd;
+    bool respondReady;
     sockaddr socket;
     std::string request;
+
 
 };
 

@@ -6,7 +6,8 @@
 
 Session::Session(int fd, sockaddr socket): fd(fd), socket(socket) {
     std::cout << "Add client: " << fd << std::endl;
-    sendAnswer();
+    respondReady = false;
+//    sendAnswer();
 }
 
 void Session::getRequest() {
@@ -19,11 +20,17 @@ void Session::getRequest() {
     if (length > 0) {
         buff[length] = 0;
         request += buff;
+        if (length < BUFF_SIZE){
+//            std::cout << "fd: " << fd << std::endl;
+//            std::cout << "message " << request.length() << " byte:" << std::endl << request;
+//            sendAnswer();
+            respondReady = true;
+//            close(fd);
+        }
     } else {
-        std::cout << "fd: " << fd << std::endl;
-        std::cout << "message " << request.length() << " byte:" << std::endl << request;
-        request.clear();
-//        sendAnswer();
+//        std::cout << "fd: " << fd << std::endl;
+//        std::cout << "message " << request.length() << " byte:" << std::endl << request;
+        respondReady = true;
     }
 
 }
@@ -34,25 +41,59 @@ int Session::get_fd() const{
 
 void Session::sendAnswer() {
 
+    std::ifstream fin("./www/index.html");
+    std::string line;
+    std::stringstream response_body;
+    while (std::getline(fin, line))
+    {
+        response_body << line;
+        if (!fin.eof())
+            response_body << "\n";
+    }
+    std::cout << std::endl << "REQUEST: FD " << fd << " langth "
+        << request.length() << " byte:" << std::endl << request << std::endl;
+    while (request.find("\n") < request.length())
+        request.replace(request.find("\n"), 1, "<br>");
+    response_body << request;
+
     std::stringstream response;
     response << "HTTP/1.1 200 OK\n"
              << "Host: localhost:8000\n"
              << "Content-Type: text/html; charset=UTF-8\n"
              << "Connection: close\n"
-             << "Content-Length: 21\n"
-             << "\n" << "<h1>CONNECT</h1>";
+             << "Content-Length: " << response_body.str().length() <<"\n"
+             << "\n"
+             << response_body.str();
 
-    std::ifstream fin("./www/index.html");
-    std::string line;
-    while (std::getline(fin, line))
-    {
-        response << line;
-        if (!fin.eof())
-            response << "\n";
-    }
+    send(fd, response.str().c_str(), response.str().length(), 0);
 
-//    std::cout << response.str() << std::endl;
+    request.clear();
+    respondReady = false;
 
-    send(fd, response.str().c_str(), response.str().size(), 0);
+    close(fd);
+    std::cout << "CLOSE " << fd << std::endl;
+
+}
+
+void Session::sendShortAnswer() {
+    std::stringstream response;
+    response << "HTTP/1.1 200 OK\n"
+             << "Host: localhost:8000\n"
+             << "Content-Type: text/html; charset=UTF-8\n"
+             << "Connection: close\n"
+             << "Content-Length: " << 0 <<"\n"
+             << "\n";
+    send(fd, response.str().c_str(), response.str().length(), 0);
+}
+
+bool Session::areRespondReady() {
+    return respondReady;
+}
+
+Session::~Session() {
+
+//    close(fd);
+//    std::cout << "CLOSE " << fd << std::endl;
+    std::cout << "DESTRUCTOR " << fd << std::endl;
 
 }

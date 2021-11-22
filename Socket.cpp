@@ -48,7 +48,7 @@ void Socket::bind(int port, IPAddress ipAddress) {
 	//bind port
     if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
         throw std::runtime_error("Bind error! (Socket::bind)");
-    std::cout << "bind Ok, port: " << ntohs(socketAddr.sin_port) << std::endl;
+//    std::cout << "bind Ok, port: " << ntohs(socketAddr.sin_port) << std::endl;
 }
 
 void Socket::listen(int qlen) {
