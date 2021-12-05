@@ -16,29 +16,41 @@ void Server::init() {
     listeningSocket.listen(qlen);
 }
 
+int Server::mySelect(fd_set *readfds, fd_set *writefds) {
+//    struct timeval tv;
+    int max_fd;
+    int resSelect;
+
+//        tv.tv_sec = 1;
+//        tv.tv_usec = 0;
+
+    int listeningSocketFd = listeningSocket.get_fd();
+    max_fd = listeningSocketFd;
+    FD_ZERO(readfds);
+    FD_ZERO(writefds);
+    FD_SET(listeningSocketFd, readfds);
+    for (size_t i = 0; i < clients.size(); ++i) {
+        FD_SET(clients[i].get_fd(), readfds);
+        FD_SET(clients[i].get_fd(), writefds);
+        if (clients[i].get_fd() > max_fd)
+            max_fd = clients[i].get_fd();
+    }
+    resSelect = select(max_fd + 1, readfds, writefds, NULL, NULL);
+    //        resSelect = select(max_fd + 1, &readfds, &writefds, NULL, &tv);
+    return (resSelect);
+}
+
 void Server::run() {
 
-    struct timeval tv;
+
     fd_set readfds, writefds;
     int resSelect;
-    int max_fd;
+
     while (!exit)
     {
-        max_fd = listeningSocket.get_fd();
-        FD_ZERO(&readfds);
-        FD_ZERO(&writefds);
-        FD_SET(listeningSocket.get_fd(), &readfds);
-        for (size_t i = 0; i < clients.size(); ++i) {
-            FD_SET(clients[i].get_fd(), &readfds);
-            FD_SET(clients[i].get_fd(), &writefds);
-            if (clients[i].get_fd() > max_fd)
-                max_fd = clients[i].get_fd();
-        }
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
-        resSelect = select(max_fd + 1, &readfds, &writefds, NULL, NULL);
+        resSelect = mySelect(&readfds, &writefds);
         std::cout << "SELECT OK " << resSelect << "\n";
-        if (resSelect < 1){
+        if (resSelect < 0){
             if (errno != EINTR){
                 std::cout << "STATUS: ERROR " << std::endl;
                 // select error handling

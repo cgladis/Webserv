@@ -4,6 +4,11 @@
 
 #include "IPAddress.hpp"
 
+IPAddress::IPAddress(): stringIP("") {
+
+}
+
+
 IPAddress::IPAddress(const std::string& ip) {
 
 	stringIP = ip;
@@ -11,9 +16,18 @@ IPAddress::IPAddress(const std::string& ip) {
 
 }
 
+void IPAddress::setIP(const std::string &ip) {
+
+    stringIP = ip;
+    this->checkIP();
+
+}
+
+
 in_addr_t IPAddress::inet_addr() {
 	return ::inet_addr(stringIP.c_str());
 }
+
 
 void IPAddress::checkIP() {
 
@@ -36,3 +50,5 @@ void IPAddress::checkIP() {
 // Написать нормальную проверку
 
 }
+
+

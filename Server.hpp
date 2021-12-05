@@ -21,6 +21,7 @@ public:
 //    void getRequest();
 
 private:
+    int mySelect(fd_set *readfds, fd_set *writefds);
     Socket listeningSocket;
     int qlen;
     std::vector<Session> clients;

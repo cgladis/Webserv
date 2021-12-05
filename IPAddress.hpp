@@ -13,8 +13,11 @@
 class IPAddress
 {
 public:
-
+    IPAddress();
 	IPAddress(const std::string& ip);
+
+    void setIP(const std::string& ip);
+
 	in_addr_t inet_addr();
 
 private:
