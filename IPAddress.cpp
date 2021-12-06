@@ -51,4 +51,12 @@ void IPAddress::checkIP() {
 
 }
 
+std::string IPAddress::getIP() const{
+    return stringIP;
+}
 
+
+std::ostream  &operator << (std::ostream &out, const IPAddress &other){
+    out << other.getIP();
+    return out;
+}

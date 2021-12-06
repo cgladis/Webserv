@@ -66,3 +66,15 @@ Socket::~Socket() {
 int Socket::get_fd() {
 	return fd;
 }
+
+void Socket::addClient(Session client) {
+    this->clients.push_back(client);
+}
+
+void Socket::fillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd) {
+    for (size_t i = 0; i < clients.size(); ++i) {
+        FD_SET(clients[i].get_fd(), readfds);
+        FD_SET(clients[i].get_fd(), writefds);
+        *max_fd = std::max(clients[i].get_fd(), *max_fd);
+    }
+}

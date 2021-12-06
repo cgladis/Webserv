@@ -4,14 +4,24 @@
 
 #include <iostream>
 #include "Server.hpp"
+#include "AllConfigs.hpp"
 
 int main(){
 
+    AllConfigs configs("webserv.conf");
+    Server webServer;
+
     try {
-        Server WebServer(8000, "127.0.0.1");
-        WebServer.init();
+        for (int i = 0; i < configs.size(); ++i) {
+            webServer.ADDServer(configs[i]);
+        }
+//            Server WebServer(8000, "127.0.0.1");
+        webServer.init();
+        webServer.run();
+        }
+
 //        while (1) {
-        WebServer.run();
+
 //        }
     }
     catch (std::runtime_error &ex)

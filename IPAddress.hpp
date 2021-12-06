@@ -17,6 +17,7 @@ public:
 	IPAddress(const std::string& ip);
 
     void setIP(const std::string& ip);
+    std::string getIP() const;
 
 	in_addr_t inet_addr();
 
@@ -24,8 +25,9 @@ private:
 	std::string stringIP;
 	void checkIP();
 
-
 };
+
+std::ostream  &operator << (std::ostream &out, const IPAddress &other);
 
 
 #endif

@@ -4,16 +4,29 @@
 
 #include "Server.hpp"
 
-Server::Server(int port, std::string ipAddress): qlen(5), exit(false) {
+//Server::Server(int port, std::string ipAddress): qlen(5), exit(false) {
+Server::Server(): qlen(5), exit(false) {
+//    listeningSocket.bind(conf.GetPort(), conf.GetIP());
+//    std::cout << "Start server http://" << conf.GetIP() << ":"
+//        << conf.GetPort() << "/" << std::endl;
+}
 
-    listeningSocket.bind(port, ipAddress);
-    std::cout << "Start server http://" << ipAddress << ":"
-        << port << "/" << std::endl;
+void Server::ADDServer(Config conf) {
 
+    Socket listeningSocket;
+
+    listeningSocket.bind(conf.GetPort(), conf.GetIP());
+    listeningSockets.push_back(listeningSocket);
+
+    std::cout << "Start server http://" << conf.GetIP() << ":"
+              << conf.GetPort() << "/" << std::endl;
 }
 
 void Server::init() {
-    listeningSocket.listen(qlen);
+    for (int i = 0; i < listeningSockets.size(); ++i) {
+        listeningSockets[i].listen(qlen);
+    }
+//    listeningSocket.listen(qlen);
 }
 
 int Server::mySelect(fd_set *readfds, fd_set *writefds) {
@@ -21,23 +34,28 @@ int Server::mySelect(fd_set *readfds, fd_set *writefds) {
     int max_fd;
     int resSelect;
 
+    int listeningSocketFd;
+
 //        tv.tv_sec = 1;
 //        tv.tv_usec = 0;
-
-    int listeningSocketFd = listeningSocket.get_fd();
-    max_fd = listeningSocketFd;
+    max_fd = 0;
     FD_ZERO(readfds);
     FD_ZERO(writefds);
-    FD_SET(listeningSocketFd, readfds);
-    for (size_t i = 0; i < clients.size(); ++i) {
-        FD_SET(clients[i].get_fd(), readfds);
-        FD_SET(clients[i].get_fd(), writefds);
-        if (clients[i].get_fd() > max_fd)
-            max_fd = clients[i].get_fd();
+    for (int i = 0; i < listeningSockets.size(); ++i) {
+        listeningSocketFd = listeningSockets[i].get_fd();
+        FD_SET(listeningSocketFd, readfds);
+        max_fd = std::max(listeningSocketFd, max_fd);
+    }
+    for (int i = 0; i < listeningSockets.size(); ++i) {
+        listeningSockets[i].fillReadfdsAndWritefds(readfds, writefds, &max_fd);
     }
     resSelect = select(max_fd + 1, readfds, writefds, NULL, NULL);
     //        resSelect = select(max_fd + 1, &readfds, &writefds, NULL, &tv);
     return (resSelect);
+}
+
+void Server::answerSocket() {
+
 }
 
 void Server::run() {
@@ -97,3 +115,4 @@ void Server::connect() {
         clients.push_back(Session(fd, inputSocket));
     }
 }
+

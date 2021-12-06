@@ -7,7 +7,9 @@
 
 #include <vector>
 #include <iostream>
+//#include <string>
 #include "IPAddress.hpp"
+
 
 struct location{
     std::vector<std::string> methods;
@@ -20,15 +22,24 @@ struct location{
 class Config {
 
 public:
+    Config(){}
+
+    void SetIP(const std::string &newIP);
+    void SetPort(int newPort);
+    void AddLocation(const location &newLocation);
+
+    IPAddress GetIP();
+    int GetPort();
 
 private:
 
-    std::vector<location> locations;
-    IPAddress listen;
+    IPAddress ip;
     int port;
     std::string server_name;
     std::string error_page;
     std::string _return;
+
+    std::vector<location> locations;
 
 };
 

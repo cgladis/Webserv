@@ -15,7 +15,11 @@ class AllConfigs: public std::vector<Config>{
 public:
     AllConfigs(const std::string& filename);
 
+private:
+    int count;
+    std::string NextWord(std::string);
+
 };
 
 
-#endif //WEBSERV_ALLCONFIGS_HPP
+#endif

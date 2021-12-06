@@ -11,6 +11,7 @@
 #include <unistd.h> //close
 #include <fcntl.h> //fcntl
 #include "IPAddress.hpp"
+#include "Session.hpp"
 
 
 class Socket
@@ -24,9 +25,12 @@ public:
 	void bind(int port, IPAddress ipAddress);
     void listen(int qlen);
     int get_fd();
+    void addClient(Session client);
+    void fillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd);
 
 private:
 	int fd;
+    std::vector<Session> clients;
 
 };
 

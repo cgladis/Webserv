@@ -13,8 +13,10 @@
 
 class Server {
 public:
-    Server(int port, std::string ipAddress);
+//    Server(int port, std::string ipAddress);
+    Server();
 
+    void ADDServer(Config);
     void init();
     void run();
     void connect();
@@ -22,10 +24,10 @@ public:
 
 private:
     int mySelect(fd_set *readfds, fd_set *writefds);
-    Socket listeningSocket;
+    std::vector<Socket> listeningSockets;
     int qlen;
-    std::vector<Session> clients;
     bool exit;
+    void answerSocket();
 };
 
 
