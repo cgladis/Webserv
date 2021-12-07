@@ -56,6 +56,28 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
 //    std::GetNextServer(&ifile);
 }
 
-std::string AllConfigs::NextWord(std::string) {
-    return std::string();
+std::string AllConfigs::NextWord(std::string line) {
+
+    line.find_first_not_of(" \t")
+    size_t start_pos = 0;
+
+    for (int i = 0; i < line.length(); ++i) {
+        if (line[i] != ' ' and line[i] != '\t') {
+            start_pos = i;
+            break;
+        }
+    }
+    line.erase(0, start_pos - 1);
+
+    if (line[start_pos] == '{' or line[start_pos] == '}' or
+            line[start_pos] == ';')
+        return std::to_string(line[start_pos]);
+
+    size_t end_pos = start_pos;
+    for (int i = start_pos; i < line.length(); ++i) {
+        if (line[i] == '{' or line[i] == '}' or
+            line[i] == ';' or line[i] == ' ')
+            end_pos = i - 1;
+    }
+    return std::to_string(line[start_pos, end_pos]);
 }

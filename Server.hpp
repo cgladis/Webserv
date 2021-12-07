@@ -19,15 +19,20 @@ public:
     void ADDServer(Config);
     void init();
     void run();
-    void connect();
+    void connect(const Socket &currentSocket);
 //    void getRequest();
 
 private:
     int mySelect(fd_set *readfds, fd_set *writefds);
+
+//    void addClient(Session client);
+    void FillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd);
+
     std::vector<Socket> listeningSockets;
     int qlen;
     bool exit;
     void answerSocket();
+    std::vector<Session> clients;
 };
 
 

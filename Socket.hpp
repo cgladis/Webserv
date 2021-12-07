@@ -21,17 +21,12 @@ public:
 	Socket();
 	~Socket();
 
-//	void bind(int port);
 	void bind(int port, IPAddress ipAddress);
     void listen(int qlen);
-    int get_fd();
-    void addClient(Session client);
-    void fillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd);
+    int get_fd() const;
 
 private:
 	int fd;
-    std::vector<Session> clients;
-
 };
 
 

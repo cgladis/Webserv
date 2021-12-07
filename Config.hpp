@@ -23,6 +23,9 @@ class Config {
 
 public:
     Config(){}
+    Config(const Config&);
+
+    Config &operator = (const Config&);
 
     void SetIP(const std::string &newIP);
     void SetPort(int newPort);

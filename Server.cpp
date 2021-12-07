@@ -23,7 +23,7 @@ void Server::ADDServer(Config conf) {
 }
 
 void Server::init() {
-    for (int i = 0; i < listeningSockets.size(); ++i) {
+    for (size_t i = 0; i < listeningSockets.size(); ++i) {
         listeningSockets[i].listen(qlen);
     }
 //    listeningSocket.listen(qlen);
@@ -41,14 +41,12 @@ int Server::mySelect(fd_set *readfds, fd_set *writefds) {
     max_fd = 0;
     FD_ZERO(readfds);
     FD_ZERO(writefds);
-    for (int i = 0; i < listeningSockets.size(); ++i) {
+    for (size_t i = 0; i < listeningSockets.size(); ++i) {
         listeningSocketFd = listeningSockets[i].get_fd();
         FD_SET(listeningSocketFd, readfds);
         max_fd = std::max(listeningSocketFd, max_fd);
     }
-    for (int i = 0; i < listeningSockets.size(); ++i) {
-        listeningSockets[i].fillReadfdsAndWritefds(readfds, writefds, &max_fd);
-    }
+    FillReadfdsAndWritefds(readfds, writefds, &max_fd);
     resSelect = select(max_fd + 1, readfds, writefds, NULL, NULL);
     //        resSelect = select(max_fd + 1, &readfds, &writefds, NULL, &tv);
     return (resSelect);
@@ -83,10 +81,13 @@ void Server::run() {
             //time out
             continue;
         }
-        if (FD_ISSET(listeningSocket.get_fd(), &readfds)){
-            std::cout << "STATUS: CONNECT " << std::endl;
-            connect(); // connect event handling
+        for (size_t i = 0; i < listeningSockets.size(); ++i) {
+            if (FD_ISSET(listeningSockets[i].get_fd(), &readfds)){
+                std::cout << "STATUS: CONNECT " << std::endl;
+                connect(listeningSockets[i]); // connect event handling
+            }
         }
+
         for (size_t i = 0; i < clients.size(); ++i) {
             if (FD_ISSET(clients[i].get_fd(), &readfds)){
                 std::cout << "STATUS: OPEN FOR READ " << clients[i].get_fd() <<std::endl;
@@ -104,15 +105,23 @@ void Server::run() {
 
 }
 
-void Server::connect() {
+void Server::connect(const Socket &currentSocket) {
 
     //try get request
     int fd;
     sockaddr inputSocket;
     socklen_t len;
-    fd = accept(listeningSocket.get_fd(), &inputSocket, &len);
+    fd = accept(currentSocket.get_fd(), &inputSocket, &len);
     if (fd > 0){
         clients.push_back(Session(fd, inputSocket));
+    }
+}
+
+void Server::FillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd) {
+    for (size_t i = 0; i < clients.size(); ++i) {
+        FD_SET(clients[i].get_fd(), readfds);
+        FD_SET(clients[i].get_fd(), writefds);
+        *max_fd = std::max(clients[i].get_fd(), *max_fd);
     }
 }
 
