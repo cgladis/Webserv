@@ -4,10 +4,21 @@
 
 #include "AllConfigs.hpp"
 
+void AllConfigs::parseListen(std::string &line, int fileLine) {
+    std::string word = NextWord(line);
+    (this->end() - 1)->SetIP(word);
+    word = NextWord(line);
+    if (word != ":")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
+    word = NextWord(line);
+    (this->end() - 1)->SetPort(std::stoi(word));
+}
+
 AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
         count(0) {
 
-    Config newConfig;
+//    Config newConfig;
     std::string word;
 
     std::string line;
@@ -24,60 +35,40 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
                 continue;
             }
             if (word == "server" and level == 0) {
-                this->push_back(newConfig);
+                this->push_back(Config());
                 count++;
-            }
+            } else if (word == "server" and level != 0)
+                throw std::runtime_error("Wrong config file in line: "
+                                         + std::to_string(fileLine));
             if (word == "{")
                 level++;
             if (word == "}")
                 level--;
-            if (word == "listen" && level > 0) {
-                line.erase(0, word.length());
-                word = NextWord(line);
-                this->end()->SetIP(word);
-//                this[count - 1].SetIP(word);
-                line.erase(0, word.length());
-                word = NextWord(line);
-                if (word != ":")
-                    throw std::runtime_error("Wrong config file in line:");
-                else
-                    line.erase(0, word.length());
-                word = NextWord(line);
-//                this[count - 1].setPort(word);
-                this->end()->SetPort(std::stoi(word));
-            }
-            line.erase(0, word.length());
             if (level < 0)
-                throw std::runtime_error("Wrong config file in line:");
+                throw std::runtime_error("Wrong config file in line: "
+                                         + std::to_string(fileLine));
+            if (word == "listen" && level > 0)
+                parseListen(line, fileLine);
         }
-        if (fin.eof())
-            return;
     }
+    fin.close();
 //    std::GetNextServer(&ifile);
 }
 
-std::string AllConfigs::NextWord(std::string line) {
+std::string AllConfigs::NextWord(std::string &line) {
 
-    line.find_first_not_of(" \t")
-    size_t start_pos = 0;
-
-    for (int i = 0; i < line.length(); ++i) {
-        if (line[i] != ' ' and line[i] != '\t') {
-            start_pos = i;
-            break;
-        }
+    size_t start_pos = line.find_first_not_of(" \t");
+    line.erase(0, start_pos);
+    std::string firstSimbol = line.substr(0, 1);
+    if (firstSimbol.find_first_of("{};:") == 0) { //return 1 simbol
+        std::string word = line.substr(0, 1);
+        line.erase(0, word.length());
+        return word;
     }
-    line.erase(0, start_pos - 1);
-
-    if (line[start_pos] == '{' or line[start_pos] == '}' or
-            line[start_pos] == ';')
-        return std::to_string(line[start_pos]);
-
-    size_t end_pos = start_pos;
-    for (int i = start_pos; i < line.length(); ++i) {
-        if (line[i] == '{' or line[i] == '}' or
-            line[i] == ';' or line[i] == ' ')
-            end_pos = i - 1;
-    }
-    return std::to_string(line[start_pos, end_pos]);
+    size_t end_pos = line.find_first_of(" \t{};:");
+    std::string word = line.substr(0, end_pos);
+    line.erase(0, word.length());
+    return word;
 }
+
+

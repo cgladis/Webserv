@@ -19,7 +19,10 @@ class Socket
 
 public:
 	Socket();
+    Socket(const Socket&);
 	~Socket();
+
+    Socket &operator = (const Socket&);
 
 	void bind(int port, IPAddress ipAddress);
     void listen(int qlen);

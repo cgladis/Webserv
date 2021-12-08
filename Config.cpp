@@ -18,7 +18,7 @@ Config &Config::operator=(const Config &other) {
 }
 
 void Config::SetIP(const std::string &newIP) {
-    ip.setIP(newIP);
+    ip = newIP;
 }
 
 void Config::SetPort(int newPort) {

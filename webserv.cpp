@@ -15,7 +15,6 @@ int main(){
         for (size_t i = 0; i < configs.size(); ++i) {
             webServer.ADDServer(configs[i]);
         }
-//            Server WebServer(8000, "127.0.0.1");
         webServer.init();
         webServer.run();
         }

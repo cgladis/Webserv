@@ -13,10 +13,10 @@ Server::Server(): qlen(5), exit(false) {
 
 void Server::ADDServer(Config conf) {
 
-    Socket listeningSocket;
+    listeningSockets.push_back(Socket());
+    (listeningSockets.end() - 1)->bind(conf.GetPort(), conf.GetIP());
+//    listeningSocket.listen(qlen);
 
-    listeningSocket.bind(conf.GetPort(), conf.GetIP());
-    listeningSockets.push_back(listeningSocket);
 
     std::cout << "Start server http://" << conf.GetIP() << ":"
               << conf.GetPort() << "/" << std::endl;
@@ -26,7 +26,6 @@ void Server::init() {
     for (size_t i = 0; i < listeningSockets.size(); ++i) {
         listeningSockets[i].listen(qlen);
     }
-//    listeningSocket.listen(qlen);
 }
 
 int Server::mySelect(fd_set *readfds, fd_set *writefds) {

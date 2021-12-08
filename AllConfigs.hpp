@@ -17,7 +17,9 @@ public:
 
 private:
     int count;
-    std::string NextWord(std::string);
+    std::string NextWord(std::string&);
+
+    void parseListen(std::string&, int );
 
 };
 

@@ -3,12 +3,26 @@
 //
 
 #include "Socket.hpp"
+#include "cerrno"
 
 Socket::Socket() {
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	std::cout << "New Socket. FD = " << fd << std::endl;
 
+}
+
+Socket::Socket(const Socket &other) {
+    *this = other;
+}
+
+Socket &Socket::operator=(const Socket &other) {
+    this->fd = other.fd;
+    return *this;
+}
+
+Socket::~Socket() {
+//    close(fd);
 }
 
 //void Socket::bind(int port) {
@@ -47,7 +61,7 @@ void Socket::bind(int port, IPAddress ipAddress) {
 
 	//bind port
     if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
-        throw std::runtime_error("Bind error! (Socket::bind)");
+        throw std::runtime_error("Bind error! (Socket::bind) " + std::string(std::strerror(errno)) );
 //    std::cout << "bind Ok, port: " << ntohs(socketAddr.sin_port) << std::endl;
 }
 
@@ -57,15 +71,10 @@ void Socket::listen(int qlen) {
 }
 
 
-
-Socket::~Socket() {
-	close(fd);
-
-}
-
 int Socket::get_fd() const{
 	return fd;
 }
+
 
 //void Socket::addClient(Session client) {
 //    this->clients.push_back(client);
