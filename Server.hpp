@@ -6,8 +6,8 @@
 #define SERVER_HPP
 
 #include "Socket.hpp"
-#include "Config.hpp"
 #include "Session.hpp"
+#include "AllConfigs.hpp"
 #include <iostream>
 #include <vector>
 
@@ -16,8 +16,7 @@ public:
 //    Server(int port, std::string ipAddress);
     Server();
 
-    void ADDServer(Config);
-    void init();
+    void addServers(AllConfigs);
     void run();
     void connect(const Socket &currentSocket);
 //    void getRequest();
@@ -26,7 +25,6 @@ private:
     int mySelect(fd_set *readfds, fd_set *writefds);
 
 //    void addClient(Session client);
-    void FillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd);
 
     std::vector<Socket> listeningSockets;
     int qlen;

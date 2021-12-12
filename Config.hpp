@@ -27,12 +27,12 @@ public:
 
     Config &operator = (const Config&);
 
-    void SetIP(const std::string &newIP);
-    void SetPort(int newPort);
-    void AddLocation(const location &newLocation);
+    void setIP(const std::string &newIP);
+    void setPort(int newPort);
+    void addLocation(const location &newLocation);
 
-    IPAddress GetIP();
-    int GetPort();
+    IPAddress getIP();
+    int getPort();
 
 private:
 

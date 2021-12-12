@@ -12,15 +12,10 @@ int main(){
     Server webServer;
 
     try {
-        for (size_t i = 0; i < configs.size(); ++i) {
-            webServer.ADDServer(configs[i]);
-        }
-        webServer.init();
+		webServer.addServers(configs);
         webServer.run();
-        }
-
-    catch (std::runtime_error &ex)
-    {
+	}
+    catch (std::runtime_error &ex) {
         std::cout << "ERROR - " << ex.what() << std::endl;
     }
     return 0;

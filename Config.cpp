@@ -17,25 +17,25 @@ Config &Config::operator=(const Config &other) {
     return *this;
 }
 
-void Config::SetIP(const std::string &newIP) {
+void Config::setIP(const std::string &newIP) {
     ip = newIP;
 }
 
-void Config::SetPort(int newPort) {
+void Config::setPort(int newPort) {
     port = newPort;
 }
 
-void Config::AddLocation(const location &newLocation) {
+void Config::addLocation(const location &newLocation) {
 
     this->locations.push_back(newLocation);
 
 }
 
-IPAddress Config::GetIP() {
+IPAddress Config::getIP() {
     return ip;
 }
 
-int Config::GetPort() {
+int Config::getPort() {
     return port;
 }
 

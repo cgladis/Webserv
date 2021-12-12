@@ -6,10 +6,9 @@
 #include "cerrno"
 
 Socket::Socket() {
-
-	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		throw std::runtime_error("Error while creating socket: " + std::string(std::strerror(errno)));
 	std::cout << "New Socket. FD = " << fd << std::endl;
-
 }
 
 Socket::Socket(const Socket &other) {

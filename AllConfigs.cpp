@@ -6,13 +6,13 @@
 
 void AllConfigs::parseListen(std::string &line, int fileLine) {
     std::string word = NextWord(line);
-    (this->end() - 1)->SetIP(word);
+    (this->end() - 1)->setIP(word);
     word = NextWord(line);
     if (word != ":")
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     word = NextWord(line);
-    (this->end() - 1)->SetPort(std::stoi(word));
+    (this->end() - 1)->setPort(std::stoi(word));
 }
 
 AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),

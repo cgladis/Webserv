@@ -11,42 +11,50 @@ Server::Server(): qlen(5), exit(false) {
 //        << conf.GetPort() << "/" << std::endl;
 }
 
-void Server::ADDServer(Config conf) {
+void Server::addServers(AllConfigs configs) {
 
-    listeningSockets.push_back(Socket());
-    (listeningSockets.end() - 1)->bind(conf.GetPort(), conf.GetIP());
-//    listeningSocket.listen(qlen);
+	for (size_t i = 0; i < configs.size(); ++i) {
+		Socket sock = Socket();
 
-
-    std::cout << "Start server http://" << conf.GetIP() << ":"
-              << conf.GetPort() << "/" << std::endl;
-}
-
-void Server::init() {
-    for (size_t i = 0; i < listeningSockets.size(); ++i) {
-        listeningSockets[i].listen(qlen);
-    }
+		sock.bind(configs[i].getPort(), configs[i].getIP());
+		sock.listen(qlen);
+		listeningSockets.push_back(sock);
+		std::cout << "Start server http://" << configs[i].getIP() << ":"
+				  << configs[i].getPort() << "/" << std::endl;
+	}
 }
 
 int Server::mySelect(fd_set *readfds, fd_set *writefds) {
-//    struct timeval tv;
+    struct timeval tv;
     int max_fd;
     int resSelect;
 
     int listeningSocketFd;
+	int sessionFd;
 
-//        tv.tv_sec = 1;
-//        tv.tv_usec = 0;
+	tv.tv_sec = 3;
+	tv.tv_usec = 0;
     max_fd = 0;
+
+	// make FD_SETS empty
     FD_ZERO(readfds);
     FD_ZERO(writefds);
+
+	// filling readfds and writefds with all available fds in webServer
     for (size_t i = 0; i < listeningSockets.size(); ++i) {
         listeningSocketFd = listeningSockets[i].get_fd();
         FD_SET(listeningSocketFd, readfds);
         max_fd = std::max(listeningSocketFd, max_fd);
     }
-    FillReadfdsAndWritefds(readfds, writefds, &max_fd);
-    resSelect = select(max_fd + 1, readfds, writefds, NULL, NULL);
+	for (size_t i = 0; i < clients.size(); ++i) {
+		sessionFd = clients[i].get_fd();
+		FD_SET(sessionFd, readfds);
+		FD_SET(sessionFd, writefds);
+		max_fd = std::max(sessionFd, max_fd);
+	}
+
+	// waiting for incoming connection. Readfds and writefds will have fds, which we have connection with
+    resSelect = select(max_fd + 1, readfds, writefds, NULL, &tv);
     //        resSelect = select(max_fd + 1, &readfds, &writefds, NULL, &tv);
     return (resSelect);
 }
@@ -57,7 +65,6 @@ void Server::answerSocket() {
 
 void Server::run() {
 
-
     fd_set readfds, writefds;
     int resSelect;
 
@@ -65,23 +72,23 @@ void Server::run() {
     {
         resSelect = mySelect(&readfds, &writefds);
         std::cout << "SELECT OK " << resSelect << "\n";
-        if (resSelect < 0){
-            if (errno != EINTR){
-                std::cout << "STATUS: ERROR " << std::endl;
-                // select error handling
-            } else{
-                std::cout << "STATUS: NO SIGNAL " << std::endl;
-                // new signal
+        if (resSelect < 0) {
+            if (errno != EINTR) {
+				// select error handling
+				std::cout << "STATUS: ERROR " << std::endl;
+			} else {
+				// new signal
+				std::cout << "STATUS: NO SIGNAL " << std::endl;
             }
             continue; //no events
         }
-        if (resSelect == 0) {
-            std::cout << "STATUS: TIME OUT " << std::endl;
-            //time out
+		if (resSelect == 0) {
+			//time out
+			std::cout << "STATUS: TIME OUT " << std::endl;
             continue;
         }
         for (size_t i = 0; i < listeningSockets.size(); ++i) {
-            if (FD_ISSET(listeningSockets[i].get_fd(), &readfds)){
+            if (FD_ISSET(listeningSockets[i].get_fd(), &readfds)) {
                 std::cout << "STATUS: CONNECT " << std::endl;
                 connect(listeningSockets[i]); // connect event handling
             }
@@ -101,7 +108,6 @@ void Server::run() {
             }
         }
     }
-
 }
 
 void Server::connect(const Socket &currentSocket) {
@@ -115,12 +121,3 @@ void Server::connect(const Socket &currentSocket) {
         clients.push_back(Session(fd, inputSocket));
     }
 }
-
-void Server::FillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd) {
-    for (size_t i = 0; i < clients.size(); ++i) {
-        FD_SET(clients[i].get_fd(), readfds);
-        FD_SET(clients[i].get_fd(), writefds);
-        *max_fd = std::max(clients[i].get_fd(), *max_fd);
-    }
-}
-
