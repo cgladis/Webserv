@@ -14,6 +14,7 @@ Server::Server(): qlen(5), exit(false) {
 void Server::ADDServer(Config conf) {
 
     listeningSockets.push_back(Socket());
+    (listeningSockets.end() - 1)->setConfig(conf);
     (listeningSockets.end() - 1)->bind(conf.GetPort(), conf.GetIP());
 //    listeningSocket.listen(qlen);
 

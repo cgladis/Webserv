@@ -13,7 +13,8 @@ Config &Config::operator=(const Config &other) {
     this->port = other.port;
     this->server_name = other.server_name;
     this->error_page = other.error_page;
-    this->_return = other._return;
+    this->returnField = other.returnField;
+    this->locations = other.locations;
     return *this;
 }
 
@@ -25,9 +26,9 @@ void Config::SetPort(int newPort) {
     port = newPort;
 }
 
-void Config::AddLocation(const location &newLocation) {
+void Config::AddLocation(std::string locationName) {
 
-    this->locations.push_back(newLocation);
+    this->locations.push_back(Location(locationName));
 
 }
 
@@ -39,4 +40,17 @@ int Config::GetPort() {
     return port;
 }
 
+void Config::SetServerName(const std::string &param) {
+    server_name = param;
+}
 
+void Config::SetErrorPage(const std::string &param) {
+    error_page = param;
+
+}
+
+void Config::SetReturn(const std::string &param) {
+
+    returnField = param;
+
+}

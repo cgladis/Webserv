@@ -75,6 +75,12 @@ int Socket::get_fd() const{
 	return fd;
 }
 
+void Socket::setConfig(Config conf) {
+
+    config = conf;
+
+}
+
 
 //void Socket::addClient(Session client) {
 //    this->clients.push_back(client);

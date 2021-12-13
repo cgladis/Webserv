@@ -3,8 +3,10 @@ NAME = webserv
 CC = clang++
 FLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
-SRC_NAME = webserv.cpp Config.cpp IPAddress.cpp Socket.cpp Server.cpp Session.cpp AllConfigs.cpp
-HPP_FILES = Config.hpp IPAddress.hpp Socket.hpp Server.hpp Session.hpp AllConfigs.hpp
+SRC_NAME = webserv.cpp Config.cpp IPAddress.cpp Socket.cpp Server.cpp \
+	Session.cpp AllConfigs.cpp Location.cpp
+HPP_FILES = Config.hpp IPAddress.hpp Socket.hpp Server.hpp \
+	Session.hpp AllConfigs.hpp Location.hpp
 OBJ_PATH = ./obj/
 
 OBJ_NAME = $(SRC_NAME:.cpp=.o)
