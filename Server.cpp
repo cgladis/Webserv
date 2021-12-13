@@ -55,6 +55,10 @@ int Server::mySelect(fd_set *readfds, fd_set *writefds) {
 
 	// waiting for incoming connection. Readfds and writefds will have fds, which we have connection with
     resSelect = select(max_fd + 1, readfds, writefds, NULL, &tv);
+
+	std::cout << readfds << std::endl;
+
+	// fdseesion = accept();
     //        resSelect = select(max_fd + 1, &readfds, &writefds, NULL, &tv);
     return (resSelect);
 }
@@ -95,18 +99,18 @@ void Server::run() {
         }
 
         for (size_t i = 0; i < clients.size(); ++i) {
-            if (FD_ISSET(clients[i].get_fd(), &readfds)){
-                std::cout << "STATUS: OPEN FOR READ " << clients[i].get_fd() <<std::endl;
-                clients[i].getRequest();
-            }
-            if (FD_ISSET(clients[i].get_fd(), &writefds)){
-                std::cout << "STATUS: OPEN FOR WRITE " << clients[i].get_fd() <<std::endl;
-                if (clients[i].areRespondReady()) {
-                    clients[i].sendAnswer();
-                    clients.erase(clients.begin() + i);
-                }
-            }
-        }
+			if (FD_ISSET(clients[i].get_fd(), &readfds)){
+				std::cout << "STATUS: OPEN FOR READ " << clients[i].get_fd() <<std::endl;
+				clients[i].getRequest();
+			}
+			if (FD_ISSET(clients[i].get_fd(), &writefds)){
+				std::cout << "STATUS: OPEN FOR WRITE " << clients[i].get_fd() <<std::endl;
+				if (clients[i].areRespondReady()) {
+					clients[i].sendAnswer();
+					clients.erase(clients.begin() + i);
+				}
+			}
+		}
     }
 }
 
