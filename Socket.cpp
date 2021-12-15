@@ -74,10 +74,8 @@ int Socket::get_fd() const{
 	return fd;
 }
 
-void Socket::setConfig(Config conf) {
-
+void Socket::setConfig(const Config& conf) {
     config = conf;
-
 }
 
 

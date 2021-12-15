@@ -18,38 +18,38 @@ Config &Config::operator=(const Config &other) {
     return *this;
 }
 
-void Config::SetIP(const std::string &newIP) {
+void Config::setIP(const std::string &newIP) {
     ip = newIP;
 }
 
-void Config::SetPort(int newPort) {
+void Config::setPort(int newPort) {
     port = newPort;
 }
 
-void Config::AddLocation(std::string locationName) {
+void Config::addLocation(std::string locationName) {
 
     this->locations.push_back(Location(locationName));
 
 }
 
-IPAddress Config::GetIP() {
+IPAddress Config::getIP() {
     return ip;
 }
 
-int Config::GetPort() {
+int Config::getPort() {
     return port;
 }
 
-void Config::SetServerName(const std::string &param) {
+void Config::setServerName(const std::string &param) {
     server_name = param;
 }
 
-void Config::SetErrorPage(const std::string &param) {
+void Config::setErrorPage(const std::string &param) {
     error_page = param;
 
 }
 
-void Config::SetReturn(const std::string &param) {
+void Config::setReturn(const std::string &param) {
 
     returnField = param;
 

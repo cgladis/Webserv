@@ -18,7 +18,7 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
 
     while (std::getline(fin, line)) {
         fileLine++;
-        while ((word = NextWord(line)) != ""){
+        while ((word = nextWord(line)) != ""){
             if (word == ";") {
                 continue;
             }
@@ -60,7 +60,7 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
 //    std::GetNextServer(&ifile);
 }
 
-std::string AllConfigs::NextWord(std::string &line) {
+std::string AllConfigs::nextWord(std::string &line) {
 
     size_t start_pos = line.find_first_not_of(" \t");
     line.erase(0, start_pos);
@@ -77,20 +77,20 @@ std::string AllConfigs::NextWord(std::string &line) {
 }
 
 void AllConfigs::parseListen(std::string &line, int fileLine) {
-    std::string word = NextWord(line);
-    (this->end() - 1)->SetIP(word);
-    word = NextWord(line);
+    std::string word = nextWord(line);
+    (this->end() - 1)->setIP(word);
+    word = nextWord(line);
     if (word != ":")
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
-    word = NextWord(line);
-    (this->end() - 1)->SetPort(std::stoi(word));
+    word = nextWord(line);
+    (this->end() - 1)->setPort(std::stoi(word));
 }
 
 void AllConfigs::parseServerName(std::string &line, int fileLine) {
-    std::string word = NextWord(line);
+    std::string word = nextWord(line);
     try {
-        (this->end() - 1)->SetServerName(word);
+        (this->end() - 1)->setServerName(word);
     } catch (std::exception &ex)
     {
         throw std::runtime_error("Wrong config file in line: "
@@ -99,9 +99,9 @@ void AllConfigs::parseServerName(std::string &line, int fileLine) {
 }
 
 void AllConfigs::parseErrorPage(std::string &line, int fileLine) {
-    std::string word = NextWord(line);
+    std::string word = nextWord(line);
     try {
-        (this->end() - 1)->SetErrorPage(word);
+        (this->end() - 1)->setErrorPage(word);
     } catch (std::exception &ex)
     {
         throw std::runtime_error("Wrong config file in line: "
@@ -111,16 +111,16 @@ void AllConfigs::parseErrorPage(std::string &line, int fileLine) {
 
 void AllConfigs::parseReturn(std::string &line, int fileLine) {
 
-    std::string word = NextWord(line);
-    word += NextWord(line);
-    word = NextWord(line);
+    std::string word = nextWord(line);
+    word += nextWord(line);
+    word = nextWord(line);
     if (word != ":")
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
-    word += NextWord(line);
+    word += nextWord(line);
 
     try {
-        (this->end() - 1)->SetReturn(word);
+        (this->end() - 1)->setReturn(word);
     } catch (std::exception &ex)
     {
         throw std::runtime_error("Wrong config file in line: "
@@ -131,9 +131,9 @@ void AllConfigs::parseReturn(std::string &line, int fileLine) {
 
 void AllConfigs::parseLocation(std::string &line, int fileLine) {
 
-    std::string word = NextWord(line);
+    std::string word = nextWord(line);
     try {
-        (this->end() - 1)->AddLocation(word);
+        (this->end() - 1)->addLocation(word);
     } catch (std::exception &ex)
     {
         throw std::runtime_error("Wrong config file in line: "

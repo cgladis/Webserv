@@ -28,15 +28,15 @@ public:
 
     Config &operator = (const Config&);
 
-    void SetIP(const std::string &newIP);
-    void SetPort(int newPort);
-    void SetServerName(const std::string &param);
-    void SetErrorPage(const std::string &param);
-    void SetReturn(const std::string &param);
-    void AddLocation(std::string locationName);
+    void setIP(const std::string &newIP);
+    void setPort(int newPort);
+    void setServerName(const std::string &param);
+    void setErrorPage(const std::string &param);
+    void setReturn(const std::string &param);
+    void addLocation(std::string locationName);
 
-    IPAddress GetIP();
-    int GetPort();
+    IPAddress getIP();
+    int getPort();
 
 private:
 

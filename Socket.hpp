@@ -28,7 +28,7 @@ public:
 	void bind(int port, IPAddress ipAddress);
     void listen(int qlen);
     int get_fd() const;
-    void setConfig(Config conf);
+    void setConfig(const Config& conf);
 
 private:
 	int fd;

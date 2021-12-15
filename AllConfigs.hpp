@@ -17,7 +17,7 @@ public:
 
 private:
     int count;
-    std::string NextWord(std::string&);
+    std::string nextWord(std::string&);
 
     void parseListen(std::string &line, int fileLine);
     void parseServerName(std::string &line, int fileLine);
