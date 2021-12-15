@@ -12,6 +12,7 @@
 #include <fcntl.h> //fcntl
 #include "IPAddress.hpp"
 #include "Session.hpp"
+#include "Config.hpp"
 
 
 class Socket
@@ -27,9 +28,11 @@ public:
 	void bind(int port, IPAddress ipAddress);
     void listen(int qlen);
     int get_fd() const;
+    void setConfig(Config conf);
 
 private:
 	int fd;
+    Config config;
 };
 
 

@@ -19,7 +19,11 @@ private:
     int count;
     std::string NextWord(std::string&);
 
-    void parseListen(std::string&, int );
+    void parseListen(std::string &line, int fileLine);
+    void parseServerName(std::string &line, int fileLine);
+    void parseErrorPage(std::string &line, int fileLine);
+    void parseReturn(std::string &line, int fileLine);
+    void parseLocation(std::string &line, int fileLine);
 
 };
 

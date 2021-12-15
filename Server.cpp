@@ -16,9 +16,14 @@ void Server::addServers(AllConfigs configs) {
 	for (size_t i = 0; i < configs.size(); ++i) {
 		Socket sock = Socket();
 
+		//parse data from configs into socket
+		sock.setConfig(configs[i]);
+
+		//make socket ready to work
 		sock.bind(configs[i].getPort(), configs[i].getIP());
 		sock.listen(qlen);
 		listeningSockets.push_back(sock);
+
 		std::cout << "Start server http://" << configs[i].getIP() << ":"
 				  << configs[i].getPort() << "/" << std::endl;
 	}

@@ -50,11 +50,11 @@ void Session::sendAnswer() {
         if (!fin.eof())
             response_body << "\n";
     }
-    std::cout << std::endl << "REQUEST: FD " << fd << " langth "
-        << request.length() << " byte:" << std::endl << request << std::endl;
-    while (request.find("\n") < request.length())
-        request.replace(request.find("\n"), 1, "<br>");
-    response_body << request;
+//    std::cout << std::endl << "REQUEST: FD " << fd << " langth "
+//        << request.length() << " byte:" << std::endl << request << std::endl;
+//    while (request.find("\n") < request.length())
+//        request.replace(request.find("\n"), 1, "<br>");
+//    response_body << request;
 
     std::stringstream response;
     response << "HTTP/1.1 200 OK\n"
