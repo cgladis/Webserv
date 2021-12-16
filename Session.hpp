@@ -23,6 +23,7 @@ public:
     void getRequest();
     void sendAnswer();
     void sendShortAnswer();
+	void receiveFromClient();
 
     int get_fd() const;
     bool areRespondReady();

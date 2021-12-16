@@ -62,12 +62,14 @@ void Server::answerSocket() {
 
 }
 
+
 void Server::run() {
     int resSelect;
 
     while (!exit)
     {
         resSelect = mySelect();
+		std::cout << "SELECT : OK = " << resSelect << std::endl;
 
 		// if error occurred
 		if (resSelect <= 0) {
@@ -86,10 +88,10 @@ void Server::run() {
 				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
 				sessions[i].getRequest();
 			}
-			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()){
+			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()) {
 				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
 				sessions[i].sendAnswer();
-				sessions.erase(sessions.begin() + i);
+				finishSession(i);
 			}
 		}
     }
@@ -109,4 +111,11 @@ void Server::connect(const Socket &currentSocket) {
 	}
 	else
 		std::cout << "ACCEPT ERROR. Cannot create a connection" << std::endl;
+}
+
+void Server::finishSession(size_t i) {
+	FD_CLR(sessions[i].get_fd(), &masReadFds);
+	FD_CLR(sessions[i].get_fd(), &masWriteFds);
+	close(sessions[i].get_fd());
+	sessions.erase(sessions.begin() + i);
 }

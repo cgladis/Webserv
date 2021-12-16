@@ -9,32 +9,32 @@ Session::Session(int fd, sockaddr socket): fd(fd), socket(socket) {
     respondReady = false;
 }
 
+void Session::receiveFromClient() {
+	char buff[BUFF_SIZE + 1];
+	unsigned long length;
+
+	length = recv(fd, buff, BUFF_SIZE, 0);
+	if (length < 0 )
+		throw std::runtime_error("receiving info error");
+	else if (length == BUFF_SIZE) {
+		buff[length] = 0;
+		request.append(buff);
+	}
+	else
+		respondReady = true;
+}
+
 void Session::getRequest() {
 
     (void)socket;
-    char buff[BUFF_SIZE + 1];
-    unsigned long length;
 
-    length = recv(fd, buff, BUFF_SIZE, 0);
-    if (length > 0) {
-        buff[length] = 0;
-        request += buff;
-        if (length < BUFF_SIZE){
-//            std::cout << "fd: " << fd << std::endl;
-//            std::cout << "message " << request.length() << " byte:" << std::endl << request;
-//            sendAnswer();
-            respondReady = true;
-//            close(fd);
-        }
-    } else {
-//        std::cout << "fd: " << fd << std::endl;
-//        std::cout << "message " << request.length() << " byte:" << std::endl << request;
-        respondReady = true;
-    }
+
+	receiveFromClient();
+
 
 }
 
-int Session::get_fd() const{
+int Session::get_fd() const {
     return fd;
 }
 
