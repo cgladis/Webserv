@@ -80,13 +80,13 @@ void Socket::setConfig(const Config& conf) {
 
 
 //void Socket::addClient(Session client) {
-//    this->clients.push_back(client);
+//    this->sessions.push_back(client);
 //}
 
 //void Socket::fillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd) {
-//    for (size_t i = 0; i < clients.size(); ++i) {
-//        FD_SET(clients[i].get_fd(), readfds);
-//        FD_SET(clients[i].get_fd(), writefds);
-//        *max_fd = std::max(clients[i].get_fd(), *max_fd);
+//    for (size_t i = 0; i < sessions.size(); ++i) {
+//        FD_SET(sessions[i].get_fd(), readfds);
+//        FD_SET(sessions[i].get_fd(), writefds);
+//        *max_fd = std::max(sessions[i].get_fd(), *max_fd);
 //    }
 //}

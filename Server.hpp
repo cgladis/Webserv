@@ -16,13 +16,14 @@ public:
 //    Server(int port, std::string ipAddress);
     Server();
 
+	int getMaxFd();
     void addServers(AllConfigs);
     void run();
     void connect(const Socket &currentSocket);
 //    void getRequest();
 
 private:
-    int mySelect(fd_set *readfds, fd_set *writefds);
+    int mySelect();
 
 //    void addClient(Session client);
 
@@ -30,7 +31,8 @@ private:
     int qlen;
     bool exit;
     void answerSocket();
-    std::vector<Session> clients;
+    std::vector<Session> sessions;
+	fd_set writeFds, readFds, masWriteFds, masReadFds;
 };
 
 

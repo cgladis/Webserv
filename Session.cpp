@@ -5,9 +5,8 @@
 #include "Session.hpp"
 
 Session::Session(int fd, sockaddr socket): fd(fd), socket(socket) {
-    std::cout << "Add client: " << fd << std::endl;
+    std::cout << "New session: " << fd << std::endl;
     respondReady = false;
-//    sendAnswer();
 }
 
 void Session::getRequest() {

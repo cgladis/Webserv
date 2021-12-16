@@ -4,11 +4,28 @@
 
 #include "Server.hpp"
 
-//Server::Server(int port, std::string ipAddress): qlen(5), exit(false) {
+int Server::getMaxFd() {
+	int max;
+	for (unsigned int i = 0; i < listeningSockets.size(); ++i)
+		max = max < listeningSockets[i].get_fd() ? listeningSockets[i].get_fd() : max;
+	for (unsigned int i = 0; i < sessions.size(); ++i)
+		max = sessions[i].get_fd() > max ? sessions[i].get_fd() : max;
+	return max;
+}
+
+void handleSelectError(int resSelect) {
+	if (resSelect < 0) {
+		if (errno != EINTR)
+			std::cout << "STATUS: ERROR " << std::endl;
+		else
+			std::cout << "STATUS: NO SIGNAL " << std::endl;
+	}
+	if (resSelect == 0)
+		std::cout << "STATUS: TIME OUT " << std::endl;
+}
+
 Server::Server(): qlen(5), exit(false) {
-//    listeningSocket.bind(conf.GetPort(), conf.GetIP());
-//    std::cout << "Start server http://" << conf.GetIP() << ":"
-//        << conf.GetPort() << "/" << std::endl;
+
 }
 
 void Server::addServers(AllConfigs configs) {
@@ -22,6 +39,7 @@ void Server::addServers(AllConfigs configs) {
 		//make socket ready to work
 		sock.bind(configs[i].getPort(), configs[i].getIP());
 		sock.listen(qlen);
+		FD_SET(sock.get_fd(), &masReadFds);
 		listeningSockets.push_back(sock);
 
 		std::cout << "Start server http://" << configs[i].getIP() << ":"
@@ -29,43 +47,15 @@ void Server::addServers(AllConfigs configs) {
 	}
 }
 
-int Server::mySelect(fd_set *readfds, fd_set *writefds) {
-    struct timeval tv;
-    int max_fd;
-    int resSelect;
-
-    int listeningSocketFd;
-	int sessionFd;
-
-	tv.tv_sec = 3;
-	tv.tv_usec = 0;
-    max_fd = 0;
-
-	// make FD_SETS empty
-    FD_ZERO(readfds);
-    FD_ZERO(writefds);
-
-	// filling readfds and writefds with all available fds in webServer
-    for (size_t i = 0; i < listeningSockets.size(); ++i) {
-        listeningSocketFd = listeningSockets[i].get_fd();
-        FD_SET(listeningSocketFd, readfds);
-        max_fd = std::max(listeningSocketFd, max_fd);
-    }
-	for (size_t i = 0; i < clients.size(); ++i) {
-		sessionFd = clients[i].get_fd();
-		FD_SET(sessionFd, readfds);
-		FD_SET(sessionFd, writefds);
-		max_fd = std::max(sessionFd, max_fd);
-	}
-
-	// waiting for incoming connection. Readfds and writefds will have fds, which we have connection with
-    resSelect = select(max_fd + 1, readfds, writefds, NULL, &tv);
-
-	std::cout << readfds << std::endl;
-
-	// fdseesion = accept();
-    //        resSelect = select(max_fd + 1, &readfds, &writefds, NULL, &tv);
-    return (resSelect);
+int Server::mySelect() {
+	// usleep for clean and copy fds properly
+	FD_ZERO(&readFds);
+	FD_ZERO(&writeFds);
+	usleep(2000);
+	readFds = masReadFds;
+	writeFds = masWriteFds;
+	usleep(2000);
+    return select(getMaxFd() + 1, &readFds, &writeFds, nullptr, nullptr);
 }
 
 void Server::answerSocket() {
@@ -73,47 +63,33 @@ void Server::answerSocket() {
 }
 
 void Server::run() {
-
-    fd_set readfds, writefds;
     int resSelect;
 
     while (!exit)
     {
-        resSelect = mySelect(&readfds, &writefds);
-        std::cout << "SELECT OK " << resSelect << "\n";
-        if (resSelect < 0) {
-            if (errno != EINTR) {
-				// select error handling
-				std::cout << "STATUS: ERROR " << std::endl;
-			} else {
-				// new signal
-				std::cout << "STATUS: NO SIGNAL " << std::endl;
-            }
-            continue; //no events
-        }
-		if (resSelect == 0) {
-			//time out
-			std::cout << "STATUS: TIME OUT " << std::endl;
-            continue;
-        }
-        for (size_t i = 0; i < listeningSockets.size(); ++i) {
-            if (FD_ISSET(listeningSockets[i].get_fd(), &readfds)) {
+        resSelect = mySelect();
+
+		// if error occurred
+		if (resSelect <= 0) {
+			handleSelectError(resSelect);
+			continue;
+		}
+
+        for (size_t i = 0; i < listeningSockets.size(); ++i)
+            if (FD_ISSET(listeningSockets[i].get_fd(), &readFds)) {
                 std::cout << "STATUS: CONNECT " << std::endl;
                 connect(listeningSockets[i]); // connect event handling
             }
-        }
 
-        for (size_t i = 0; i < clients.size(); ++i) {
-			if (FD_ISSET(clients[i].get_fd(), &readfds)){
-				std::cout << "STATUS: OPEN FOR READ " << clients[i].get_fd() <<std::endl;
-				clients[i].getRequest();
+        for (size_t i = 0; i < sessions.size(); ++i) {
+			if (FD_ISSET(sessions[i].get_fd(), &readFds)){
+				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
+				sessions[i].getRequest();
 			}
-			if (FD_ISSET(clients[i].get_fd(), &writefds)){
-				std::cout << "STATUS: OPEN FOR WRITE " << clients[i].get_fd() <<std::endl;
-				if (clients[i].areRespondReady()) {
-					clients[i].sendAnswer();
-					clients.erase(clients.begin() + i);
-				}
+			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()){
+				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
+				sessions[i].sendAnswer();
+				sessions.erase(sessions.begin() + i);
 			}
 		}
     }
@@ -126,7 +102,11 @@ void Server::connect(const Socket &currentSocket) {
     sockaddr inputSocket;
     socklen_t len;
     fd = accept(currentSocket.get_fd(), &inputSocket, &len);
-    if (fd > 0){
-        clients.push_back(Session(fd, inputSocket));
-    }
+    if (fd > 0) {
+		FD_SET(fd, &masReadFds);
+		FD_SET(fd, &masWriteFds);
+        sessions.push_back(Session(fd, inputSocket));
+	}
+	else
+		std::cout << "ACCEPT ERROR. Cannot create a connection" << std::endl;
 }
