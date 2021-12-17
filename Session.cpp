@@ -22,7 +22,10 @@ void Session::receiveFromClient() {
 		request.append(buff);
 	}
 	else
+	{
 		respondReady = true;
+		std::cout << request << std::endl;
+	}
 }
 
 void Session::parseRequest() {
@@ -48,6 +51,7 @@ void Session::parseRequest() {
 
 void Session::getRequest() {
     (void)socket;
+
 	receiveFromClient();
 }
 

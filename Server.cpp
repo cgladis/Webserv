@@ -54,6 +54,10 @@ int Server::mySelect() {
 	usleep(2000);
 	readFds = masReadFds;
 	writeFds = masWriteFds;
+
+//	std::cout << &writeFds << std::endl;
+//	std::cout << &masWriteFds << std::endl;
+
 	usleep(2000);
     return select(getMaxFd() + 1, &readFds, &writeFds, nullptr, nullptr);
 }
