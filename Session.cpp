@@ -20,18 +20,15 @@ void Session::receiveFromClient() {
 		buff[length] = 0;
 		request.append(buff);
 	}
-	else
+	else {
+		std::cout << request << std::endl;
 		respondReady = true;
+	}
 }
 
 void Session::getRequest() {
-
     (void)socket;
-
-
 	receiveFromClient();
-
-
 }
 
 int Session::get_fd() const {
@@ -43,17 +40,11 @@ void Session::sendAnswer() {
     std::ifstream fin("./www/index.html");
     std::string line;
     std::stringstream response_body;
-    while (std::getline(fin, line))
-    {
+    while (std::getline(fin, line)) {
         response_body << line;
         if (!fin.eof())
             response_body << "\n";
     }
-//    std::cout << std::endl << "REQUEST: FD " << fd << " langth "
-//        << request.length() << " byte:" << std::endl << request << std::endl;
-//    while (request.find("\n") < request.length())
-//        request.replace(request.find("\n"), 1, "<br>");
-//    response_body << request;
 
     std::stringstream response;
     response << "HTTP/1.1 200 OK\n"
@@ -74,7 +65,7 @@ void Session::sendAnswer() {
 
 }
 
-void Session::sendShortAnswer() {
+void Session::sendShortAnswer() const {
     std::stringstream response;
     response << "HTTP/1.1 200 OK\n"
              << "Host: localhost:8000\n"

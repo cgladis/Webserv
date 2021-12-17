@@ -22,7 +22,7 @@ public:
 
     void getRequest();
     void sendAnswer();
-    void sendShortAnswer();
+    void sendShortAnswer() const;
 	void receiveFromClient();
 
     int get_fd() const;
