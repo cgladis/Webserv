@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <string>
 #include "Socket.hpp"
+#include "AllConfigs.hpp"
 
 #define BUFF_SIZE 100
 
@@ -23,7 +24,7 @@ public:
 
 	void parseRequest();
     void getRequest();
-    void sendAnswer(const std::vector<class Socket> &listSocks);
+    void sendAnswer(const AllConfigs &configs);
 	void receiveFromClient();
 
     int get_fd() const;

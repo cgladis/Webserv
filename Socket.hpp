@@ -28,6 +28,7 @@ public:
     void listen(int qlen);
     int get_fd() const;
     void setConfig(const Config& conf);
+	Config getConfig();
 
 private:
 	int fd;

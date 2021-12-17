@@ -78,6 +78,10 @@ void Socket::setConfig(const Config& conf) {
     config = conf;
 }
 
+Config Socket::getConfig() {
+	return config;
+}
+
 
 //void Socket::addClient(Session client) {
 //    this->sessions.push_back(client);

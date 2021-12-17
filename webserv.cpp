@@ -19,7 +19,7 @@ int main(){
 
     try {
 		webServer.addServers(configs);
-        webServer.run();
+        webServer.run(configs);
 	}
     catch (std::runtime_error &ex) {
         std::cout << "ERROR - " << ex.what() << std::endl;

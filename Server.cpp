@@ -63,7 +63,7 @@ void Server::answerSocket() {
 }
 
 
-void Server::run() {
+void Server::run(const AllConfigs &configs) {
     int resSelect;
 
     while (!exit)
@@ -90,7 +90,7 @@ void Server::run() {
 			}
 			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()) {
 				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
-				sessions[i].sendAnswer(listeningSockets);
+				sessions[i].sendAnswer(configs);
 				finishSession(i);
 			}
 		}

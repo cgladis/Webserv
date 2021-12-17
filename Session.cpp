@@ -3,6 +3,7 @@
 //
 
 #include "Session.hpp"
+#include "AllConfigs.hpp"
 
 Session::Session(int fd, sockaddr socket): fd(fd), socket(socket) {
     std::cout << "New session: " << fd << std::endl;
@@ -20,9 +21,8 @@ void Session::receiveFromClient() {
 		buff[length] = 0;
 		request.append(buff);
 	}
-	else {
+	else
 		respondReady = true;
-	}
 }
 
 void Session::parseRequest() {
@@ -51,10 +51,17 @@ void Session::getRequest() {
 	receiveFromClient();
 }
 
-void Session::sendAnswer(const std::vector<Socket> &listSocks) {
-	parseRequest();
+Config findConfigByPort(AllConfigs configs, const std::string &port) {
+	for (size_t i = 0; i < configs.size(); ++i)
+		if (std::to_string(configs[i].getPort()) == port)
+			return configs[i];
+	return Config();
+}
 
-	listSocks.size();
+void Session::sendAnswer(const AllConfigs &configs) {
+	parseRequest();
+	Config conf = findConfigByPort(configs, port);
+	std::cout << conf.getIP().getIP() << std::endl;
 
     std::ifstream fin("./www/index.html");
     std::string line;
