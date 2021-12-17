@@ -12,6 +12,7 @@
 #include <vector>
 #include <unistd.h>
 #include <string>
+#include "Socket.hpp"
 
 #define BUFF_SIZE 100
 
@@ -20,9 +21,9 @@ public:
     Session(int fd, sockaddr socket);
     ~Session();
 
+	void parseRequest();
     void getRequest();
-    void sendAnswer();
-    void sendShortAnswer() const;
+    void sendAnswer(const std::vector<class Socket> &listSocks);
 	void receiveFromClient();
 
     int get_fd() const;
@@ -34,6 +35,11 @@ private:
     sockaddr socket;
     std::string request;
 
+	// data from request
+	std::string method;
+	std::string path;
+	std::string port;
+	std::string browser;
 
 };
 

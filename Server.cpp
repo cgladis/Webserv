@@ -90,7 +90,7 @@ void Server::run() {
 			}
 			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()) {
 				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
-				sessions[i].sendAnswer();
+				sessions[i].sendAnswer(listeningSockets);
 				finishSession(i);
 			}
 		}

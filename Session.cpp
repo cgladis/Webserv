@@ -21,8 +21,28 @@ void Session::receiveFromClient() {
 		request.append(buff);
 	}
 	else {
-		std::cout << request << std::endl;
 		respondReady = true;
+	}
+}
+
+void Session::parseRequest() {
+	std::stringstream ss(request);
+	std::string uslessWord;
+	for (int i = 0; i < 7; ++i) {
+		if (i == 0)
+			ss >> method;
+		else if (i == 1)
+			ss >> path;
+		else if (i == 4) {
+			ss >> uslessWord;
+			port = uslessWord.substr(uslessWord.find(':') + 1);
+		}
+		else if (i == 6) {
+			ss >> uslessWord;
+			browser = uslessWord.substr(0, 7);
+		}
+		else
+			ss >> uslessWord;
 	}
 }
 
@@ -31,11 +51,10 @@ void Session::getRequest() {
 	receiveFromClient();
 }
 
-int Session::get_fd() const {
-    return fd;
-}
+void Session::sendAnswer(const std::vector<Socket> &listSocks) {
+	parseRequest();
 
-void Session::sendAnswer() {
+	listSocks.size();
 
     std::ifstream fin("./www/index.html");
     std::string line;
@@ -65,25 +84,14 @@ void Session::sendAnswer() {
 
 }
 
-void Session::sendShortAnswer() const {
-    std::stringstream response;
-    response << "HTTP/1.1 200 OK\n"
-             << "Host: localhost:8000\n"
-             << "Content-Type: text/html; charset=UTF-8\n"
-             << "Connection: close\n"
-             << "Content-Length: " << 0 <<"\n"
-             << "\n";
-    send(fd, response.str().c_str(), response.str().length(), 0);
-}
-
 bool Session::areRespondReady() {
     return respondReady;
 }
 
+int Session::get_fd() const {
+	return fd;
+}
+
 Session::~Session() {
-
-//    close(fd);
-//    std::cout << "CLOSE " << fd << std::endl;
-    std::cout << "DESTRUCTOR " << fd << std::endl;
-
+    std::cout << "Session's " << fd << " was closed" << std::endl;
 }
