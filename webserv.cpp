@@ -9,7 +9,7 @@
 int main(){
 
 //    try {
-        AllConfigs configs("webserv.conf");
+	AllConfigs configs("webserv.conf");
 //    } catch (std::runtime_error &ex) {
 //        std::cout << ex.what();
 //        exit(0);

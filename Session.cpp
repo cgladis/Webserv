@@ -10,22 +10,11 @@ Session::Session(int fd, sockaddr socket): fd(fd), socket(socket) {
     respondReady = false;
 }
 
-void Session::receiveFromClient() {
-	char buff[BUFF_SIZE + 1];
-	unsigned long length;
-
-	length = recv(fd, buff, BUFF_SIZE, 0);
-	if (length < 0 )
-		throw std::runtime_error("receiving info error");
-	else if (length == BUFF_SIZE) {
-		buff[length] = 0;
-		request.append(buff);
-	}
-	else
-	{
-		respondReady = true;
-		std::cout << request << std::endl;
-	}
+Config findConfigByPort(AllConfigs configs, const std::string &port) {
+	for (size_t i = 0; i < configs.size(); ++i)
+		if (std::to_string(configs[i].getPort()) == port)
+			return configs[i];
+	return Config();
 }
 
 void Session::parseRequest() {
@@ -50,24 +39,46 @@ void Session::parseRequest() {
 }
 
 void Session::getRequest() {
-    (void)socket;
+	char buff[BUFF_SIZE + 1];
+	unsigned long length;
 
-	receiveFromClient();
-}
-
-Config findConfigByPort(AllConfigs configs, const std::string &port) {
-	for (size_t i = 0; i < configs.size(); ++i)
-		if (std::to_string(configs[i].getPort()) == port)
-			return configs[i];
-	return Config();
+	length = recv(fd, buff, BUFF_SIZE, 0);
+	if (length < 0 )
+		throw std::runtime_error("receiving info error");
+	else if (length == BUFF_SIZE) {
+		buff[length] = 0;
+		request.append(buff);
+	}
+	else {
+		respondReady = true;
+		std::cout << request << std::endl;
+	}
+	parseRequest();
 }
 
 void Session::sendAnswer(const AllConfigs &configs) {
-	parseRequest();
+	(void)socket;
 	Config conf = findConfigByPort(configs, port);
-	std::cout << conf.getIP().getIP() << std::endl;
 
-    std::ifstream fin("./www/index.html");
+	// go through all paths in each location and find the same to path from request (if no -> 404)
+	// check if request method does exist in location method vector (if no -> ???)
+	// make new string = root + index and try to
+	// 		if (method == GET)
+	// 			open it for read and return to client (if file wasn't found) -> 404
+	//		if (method == DELETE)
+	//			delete it (if file wasn't found) -> 404
+	//		if (method == POST)
+	//			add data to server or execve(exec from location) ??
+
+
+
+	if (path == "/")
+		path = "www/index.html";
+	else if (path == "/images/favicon.ico")
+		path = "www/images/favicon.ico";
+    std::ifstream fin(path); // path cannot start with '/'
+	if (!fin.is_open())
+		exit(-1);
     std::string line;
     std::stringstream response_body;
     while (std::getline(fin, line)) {
@@ -77,25 +88,31 @@ void Session::sendAnswer(const AllConfigs &configs) {
     }
 
     std::stringstream response;
-    response << "HTTP/1.1 200 OK\n"
-             << "Host: localhost:8000\n"
-             << "Content-Type: text/html; charset=UTF-8\n"
-             << "Connection: close\n"
-             << "Content-Length: " << response_body.str().length() <<"\n"
-             << "\n"
-             << response_body.str();
+	if (path == "www/index.html") {
+		response << "HTTP/1.1 200 OK\n" // depends on parseRequest
+				 << "Host: localhost:8000\n" // does it mean client's ip:port?
+				 << "Content-Type: text/html; charset=UTF-8\n" // depends on path text/html for html, image/x-icon
+				 << "Connection: close\n"
+				 << "Content-Length: " << response_body.str().length() <<"\n"
+				 << "\n"
+				 << response_body.str();
+	}
+	else if (path == "www/images/favicon.ico") {
+		response << "HTTP/1.1 200 OK\n" // depends on parseRequest
+				 << "Host: localhost:8000\n" // does it mean client's ip:port?
+				 << "Content-Type: image/avif\n" // depends on path text/html for html, image/x-icon
+				 << "Connection: close\n"
+				 << "Content-Length: " << response_body.str().length() <<"\n"
+				 << "\n"
+				 << response_body.str();
+	}
+
 
     send(fd, response.str().c_str(), response.str().length(), 0);
 
-    request.clear();
-    respondReady = false;
-
-    close(fd);
-    std::cout << "CLOSE " << fd << std::endl;
-
 }
 
-bool Session::areRespondReady() {
+bool Session::areRespondReady() const {
     return respondReady;
 }
 

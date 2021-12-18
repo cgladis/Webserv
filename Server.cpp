@@ -51,14 +51,14 @@ int Server::mySelect() {
 	// usleep for clean and copy fds properly
 	FD_ZERO(&readFds);
 	FD_ZERO(&writeFds);
-	usleep(2000);
+	usleep(10000);
 	readFds = masReadFds;
 	writeFds = masWriteFds;
 
 //	std::cout << &writeFds << std::endl;
 //	std::cout << &masWriteFds << std::endl;
 
-	usleep(2000);
+	usleep(10000);
     return select(getMaxFd() + 1, &readFds, &writeFds, nullptr, nullptr);
 }
 
@@ -111,6 +111,8 @@ void Server::connect(const Socket &currentSocket) {
     if (fd > 0) {
 		FD_SET(fd, &masReadFds);
 		FD_SET(fd, &masWriteFds);
+		// give some time to set fds in fd_sets
+		usleep(20000);
         sessions.push_back(Session(fd, inputSocket));
 	}
 	else
@@ -120,6 +122,8 @@ void Server::connect(const Socket &currentSocket) {
 void Server::finishSession(size_t i) {
 	FD_CLR(sessions[i].get_fd(), &masReadFds);
 	FD_CLR(sessions[i].get_fd(), &masWriteFds);
+	usleep(10000);
 	close(sessions[i].get_fd());
-	sessions.erase(sessions.begin() + i);
+	std::cout << "SESSION CLOSED. FD: " << sessions[i].get_fd() << std::endl;
+	sessions.erase(sessions.begin() + static_cast<long>(i));
 }
