@@ -8,7 +8,9 @@
 #include <vector>
 #include <iostream>
 
-enum method{GET, POST, PUT, DELETE};
+enum method{
+	GET, POST, PUT, DELETE
+};
 
 class Location {
 public:

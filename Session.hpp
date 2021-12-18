@@ -13,17 +13,21 @@
 #include <unistd.h>
 #include <string>
 #include "AllConfigs.hpp"
+#include "Socket.hpp"
+#include <map>
 
 #define BUFF_SIZE 100
 
+class Socket;
+
 class Session {
 public:
-    Session(int fd, sockaddr socket);
+    Session(int fd, const Socket &socket);
     ~Session();
 
 	void parseRequest();
     void getRequest();
-    void sendAnswer(const AllConfigs &configs);
+    void sendAnswer();
 
     int get_fd() const;
     bool areRespondReady() const;
@@ -31,15 +35,11 @@ public:
 private:
     int fd;
     bool respondReady;
-    sockaddr socket;
     std::string request;
 
-	// data from request
-	std::string method;
-	std::string path;
-	std::string port;
-	std::string browser;
-
+	Socket socket;
+	// keys (method, path, content-length, connection,
+	std::map<std::string, std::string> header;
 };
 
 

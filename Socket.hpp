@@ -11,9 +11,7 @@
 #include <unistd.h> //close
 #include <fcntl.h> //fcntl
 #include "IPAddress.hpp"
-#include "Session.hpp"
 #include "Config.hpp"
-
 
 class Socket
 {

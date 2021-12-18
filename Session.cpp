@@ -5,36 +5,21 @@
 #include "Session.hpp"
 #include "AllConfigs.hpp"
 
-Session::Session(int fd, sockaddr socket): fd(fd), socket(socket) {
+Session::Session(int fd, const Socket &socket): fd(fd), socket(socket) {
     std::cout << "New session: " << fd << std::endl;
     respondReady = false;
 }
 
-Config findConfigByPort(AllConfigs configs, const std::string &port) {
-	for (size_t i = 0; i < configs.size(); ++i)
-		if (std::to_string(configs[i].getPort()) == port)
-			return configs[i];
-	return Config();
-}
-
 void Session::parseRequest() {
 	std::stringstream ss(request);
-	std::string uslessWord;
-	for (int i = 0; i < 7; ++i) {
+	std::string curWord;
+
+	for (int i = 0; std::getline(ss, curWord, ' '); ++i) {
 		if (i == 0)
-			ss >> method;
-		else if (i == 1)
-			ss >> path;
-		else if (i == 4) {
-			ss >> uslessWord;
-			port = uslessWord.substr(uslessWord.find(':') + 1);
-		}
-		else if (i == 6) {
-			ss >> uslessWord;
-			browser = uslessWord.substr(0, 7);
-		}
-		else
-			ss >> uslessWord;
+			header.insert(std::pair<std::string, std::string>("method", curWord));
+		if (i == 1)
+			header.insert(std::pair<std::string, std::string>("path", curWord));
+		// need to parse all data
 	}
 }
 
@@ -56,9 +41,8 @@ void Session::getRequest() {
 	parseRequest();
 }
 
-void Session::sendAnswer(const AllConfigs &configs) {
-	(void)socket;
-	Config conf = findConfigByPort(configs, port);
+void Session::sendAnswer() {
+	Config config = socket.getConfig();
 
 	// go through all paths in each location and find the same to path from request (if no -> 404)
 	// check if request method does exist in location method vector (if no -> ???)
@@ -70,12 +54,15 @@ void Session::sendAnswer(const AllConfigs &configs) {
 	//		if (method == POST)
 	//			add data to server or execve(exec from location) ??
 
+//	sendAnswerOnGetRequest();
 
+	std::string path;
 
-	if (path == "/")
+	if (header.at("path") == "/")
 		path = "www/index.html";
-	else if (path == "/images/favicon.ico")
+	else if (header.at("path") == "/images/favicon.ico")
 		path = "www/images/favicon.ico";
+	std::cout << path << std::endl;
     std::ifstream fin(path); // path cannot start with '/'
 	if (!fin.is_open())
 		exit(-1);
@@ -99,7 +86,7 @@ void Session::sendAnswer(const AllConfigs &configs) {
 	}
 	else if (path == "www/images/favicon.ico") {
 		response << "HTTP/1.1 200 OK\n" // depends on parseRequest
-				 << "Host: localhost:8000\n" // does it mean client's ip:port?
+				 << "Host: localhost:8000\n" // does it mean client's ip:port? (server's ip:port)
 				 << "Content-Type: image/avif\n" // depends on path text/html for html, image/x-icon
 				 << "Connection: close\n"
 				 << "Content-Length: " << response_body.str().length() <<"\n"

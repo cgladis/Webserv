@@ -18,7 +18,7 @@ public:
 
 	int getMaxFd();
     void addServers(AllConfigs);
-    void run(const AllConfigs &);
+    void run();
     void connect(const Socket &currentSocket);
 	void finishSession(size_t i);
 //    void getRequest();

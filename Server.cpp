@@ -55,8 +55,6 @@ int Server::mySelect() {
 	readFds = masReadFds;
 	writeFds = masWriteFds;
 
-//	std::cout << &writeFds << std::endl;
-//	std::cout << &masWriteFds << std::endl;
 
 	usleep(10000);
     return select(getMaxFd() + 1, &readFds, &writeFds, nullptr, nullptr);
@@ -67,7 +65,7 @@ void Server::answerSocket() {
 }
 
 
-void Server::run(const AllConfigs &configs) {
+void Server::run() {
     int resSelect;
 
     while (!exit)
@@ -94,7 +92,7 @@ void Server::run(const AllConfigs &configs) {
 			}
 			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()) {
 				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
-				sessions[i].sendAnswer(configs);
+				sessions[i].sendAnswer();
 				finishSession(i);
 			}
 		}
@@ -113,7 +111,7 @@ void Server::connect(const Socket &currentSocket) {
 		FD_SET(fd, &masWriteFds);
 		// give some time to set fds in fd_sets
 		usleep(20000);
-        sessions.push_back(Session(fd, inputSocket));
+        sessions.push_back(Session(fd, currentSocket));
 	}
 	else
 		std::cout << "ACCEPT ERROR. Cannot create a connection" << std::endl;

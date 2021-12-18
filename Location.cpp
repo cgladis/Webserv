@@ -5,7 +5,6 @@
 #include "Location.hpp"
 
 Location::Location(): autoindex(false) {
-
 }
 
 Location::Location(std::string locationName): locationName(locationName), autoindex(false) {
