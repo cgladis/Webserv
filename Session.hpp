@@ -18,17 +18,19 @@
 
 #define BUFF_SIZE 100
 
-class Socket;
+//class Socket;
 
 class Session {
 public:
     Session(int fd, const Socket &socket);
+//	Session &operator=(const Session& oth);
     ~Session();
 
 	void parseRequest();
     void getRequest();
     void sendAnswer();
 
+	const Socket &getSocket();
     int get_fd() const;
     bool areRespondReady() const;
 
@@ -37,8 +39,8 @@ private:
     bool respondReady;
     std::string request;
 
-	Socket socket;
-	// keys (method, path, content-length, connection,
+	const Socket &socket;
+	// keys (method, path, content-length, connection, apply, частямиИлиЦелымПередаетсяБади
 	std::map<std::string, std::string> header;
 };
 

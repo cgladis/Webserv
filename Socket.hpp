@@ -18,15 +18,15 @@ class Socket
 public:
 	Socket();
     Socket(const Socket&);
+    Socket &operator = (const Socket&);
 	~Socket();
 
-    Socket &operator = (const Socket&);
 
 	void bind(int port, IPAddress ipAddress);
     void listen(int qlen);
     int get_fd() const;
     void setConfig(const Config& conf);
-	Config getConfig();
+	Config getConfig() const;
 
 private:
 	int fd;

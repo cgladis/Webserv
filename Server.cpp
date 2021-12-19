@@ -123,5 +123,5 @@ void Server::finishSession(size_t i) {
 	usleep(10000);
 	close(sessions[i].get_fd());
 	std::cout << "SESSION CLOSED. FD: " << sessions[i].get_fd() << std::endl;
-	sessions.erase(sessions.begin() + static_cast<long>(i));
+	sessions.erase(sessions.begin() + i);
 }

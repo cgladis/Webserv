@@ -78,7 +78,7 @@ void Socket::setConfig(const Config& conf) {
     config = conf;
 }
 
-Config Socket::getConfig() {
+Config Socket::getConfig() const {
 	return config;
 }
 

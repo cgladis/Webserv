@@ -7,8 +7,10 @@
 
 Session::Session(int fd, const Socket &socket): fd(fd), socket(socket) {
     std::cout << "New session: " << fd << std::endl;
+//	this->socket = socket;
     respondReady = false;
 }
+
 
 void Session::parseRequest() {
 	std::stringstream ss(request);
@@ -42,7 +44,7 @@ void Session::getRequest() {
 }
 
 void Session::sendAnswer() {
-	Config config = socket.getConfig();
+	Config config = socket->getConfig();
 
 	// go through all paths in each location and find the same to path from request (if no -> 404)
 	// check if request method does exist in location method vector (if no -> ???)
@@ -110,3 +112,14 @@ int Session::get_fd() const {
 Session::~Session() {
     std::cout << "Session's " << fd << " was closed" << std::endl;
 }
+
+const Socket &Session::getSocket() {
+	return *socket;
+}
+
+//Session &Session::operator=(const Session &oth) {
+//	this->fd = oth.fd;
+//	this->socket = oth.socket;
+//	Session retSes = Session(oth.fd, oth.socket);
+//	return retSes;
+//}
