@@ -54,3 +54,11 @@ void Config::setReturn(const std::string &param) {
     returnField = param;
 
 }
+
+Location &Config::getLastLocation() {
+
+    return *(locations.end() - 1);
+
+}
+
+
