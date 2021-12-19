@@ -99,7 +99,7 @@ void Server::run() {
     }
 }
 
-void Server::connect(const Socket &currentSocket) {
+void Server::connect(Socket &currentSocket) {
 
     //try get request
     int fd;

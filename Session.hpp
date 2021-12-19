@@ -22,8 +22,8 @@
 
 class Session {
 public:
-    Session(int fd, const Socket &socket);
-//	Session &operator=(const Session& oth);
+    Session(int fd, Socket &socket);
+	Session &operator=(const Session& oth);
     ~Session();
 
 	void parseRequest();
@@ -39,7 +39,7 @@ private:
     bool respondReady;
     std::string request;
 
-	const Socket &socket;
+	Socket &socket;
 	// keys (method, path, content-length, connection, apply, частямиИлиЦелымПередаетсяБади
 	std::map<std::string, std::string> header;
 };

@@ -18,7 +18,7 @@ class Socket
 public:
 	Socket();
     Socket(const Socket&);
-    Socket &operator = (const Socket&);
+    const Socket &operator = (const Socket&);
 	~Socket();
 
 

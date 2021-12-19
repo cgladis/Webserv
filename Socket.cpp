@@ -15,7 +15,7 @@ Socket::Socket(const Socket &other) {
     *this = other;
 }
 
-Socket &Socket::operator=(const Socket &other) {
+Socket const &Socket::operator=(const Socket &other) {
     this->fd = other.fd;
     return *this;
 }
