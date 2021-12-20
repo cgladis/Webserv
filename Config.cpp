@@ -27,9 +27,7 @@ void Config::setPort(int newPort) {
 }
 
 void Config::addLocation(std::string locationName) {
-
     this->locations.push_back(Location(locationName));
-
 }
 
 IPAddress Config::getIP() {
@@ -46,19 +44,20 @@ void Config::setServerName(const std::string &param) {
 
 void Config::setErrorPage(const std::string &param) {
     error_page = param;
-
 }
 
 void Config::setReturn(const std::string &param) {
-
     returnField = param;
-
 }
 
 Location &Config::getLastLocation() {
-
     return *(locations.end() - 1);
+}
 
+std::vector<Location> Config::getLocations() {
+	std::sort(locations.begin(), locations.end());
+	std::reverse(locations.begin(), locations.end());
+	return locations;
 }
 
 

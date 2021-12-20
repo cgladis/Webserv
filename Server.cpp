@@ -44,6 +44,7 @@ void Server::addServers(AllConfigs configs) {
 
 		std::cout << "Start server http://" << configs[i].getIP() << ":"
 				  << configs[i].getPort() << "/" << std::endl;
+		std::vector<Location> loc = configs[i].getLocations();
 	}
 }
 

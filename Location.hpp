@@ -17,10 +17,11 @@ public:
     Location();
     Location(std::string locationName);
     Location(const Location&);
-
+	bool operator<(const Location& oth) const;
     Location &operator = (const Location&);
 
     void SetLocationName(std::string locationName);
+	std::string getLocationName() const;
     void AddMethod(method method);
     void addIndex(std::string index);
 

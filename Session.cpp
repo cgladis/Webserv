@@ -50,7 +50,7 @@ void Session::getRequest() {
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
 	Location retLocation;
 	for (size_t i = 0; i < locations.size(); ++i) {
-		if (url.find(locations[i].getLocationUrl()) != std::string::npos)
+		if (url.find(locations[i].getLocationName()) != std::string::npos)
 			retLocation = locations[i];
 	}
 	return retLocation;
@@ -64,9 +64,9 @@ void Session::sendAnswer() {
 	std::string path;
 	std::string url = header.at("Path:");
 	Config config = socket.getConfig();
-	Location location = getMyLocation(config.getLocations(), url);
+//	Location location = getMyLocation(config.getLocations(), url);
 
-	
+
 
 
 

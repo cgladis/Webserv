@@ -45,3 +45,11 @@ void Location::addIndex(std::string index) {
     this->index = index;
 
 }
+
+bool Location::operator<(const Location &oth) const {
+	return this->locationName.size() < oth.locationName.size();
+}
+
+std::string Location::getLocationName() const{
+	return locationName;
+}

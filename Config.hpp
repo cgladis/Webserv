@@ -35,6 +35,7 @@ public:
     void setReturn(const std::string &param);
     void addLocation(std::string locationName);
     Location &getLastLocation();
+	std::vector<Location> getLocations();
 
     IPAddress getIP();
     int getPort();
