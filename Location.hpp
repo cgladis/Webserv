@@ -22,6 +22,7 @@ public:
 
     void SetLocationName(std::string locationName);
     void AddMethod(method method);
+    void addIndex(std::string index);
 
 private:
     std::string locationName;

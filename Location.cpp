@@ -39,3 +39,9 @@ void Location::AddMethod(method method) {
     this->methods.push_back(method);
 
 }
+
+void Location::addIndex(std::string index) {
+
+    this->index = index;
+
+}

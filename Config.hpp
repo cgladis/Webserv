@@ -34,6 +34,7 @@ public:
     void setErrorPage(const std::string &param);
     void setReturn(const std::string &param);
     void addLocation(std::string locationName);
+    Location &getLastLocation();
 
     IPAddress getIP();
     int getPort();

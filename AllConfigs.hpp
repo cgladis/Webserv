@@ -24,6 +24,8 @@ private:
     void parseErrorPage(std::string &line, int fileLine);
     void parseReturn(std::string &line, int fileLine);
     void parseLocation(std::string &line, int fileLine);
+    void parseMethods(std::string &line, int fileLine);
+    void parseIndex(std::string &line, int fileLine);
 
 };
 
