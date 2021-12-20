@@ -33,7 +33,6 @@ void Server::addServers(AllConfigs configs) {
 	for (size_t i = 0; i < configs.size(); ++i) {
 		Socket sock = Socket();
 
-		//parse data from configs into socket
 		sock.setConfig(configs[i]);
 
 		//make socket ready to work
@@ -44,7 +43,6 @@ void Server::addServers(AllConfigs configs) {
 
 		std::cout << "Start server http://" << configs[i].getIP() << ":"
 				  << configs[i].getPort() << "/" << std::endl;
-		std::vector<Location> loc = configs[i].getLocations();
 	}
 }
 
@@ -55,8 +53,6 @@ int Server::mySelect() {
 	usleep(10000);
 	readFds = masReadFds;
 	writeFds = masWriteFds;
-
-
 	usleep(10000);
     return select(getMaxFd() + 1, &readFds, &writeFds, nullptr, nullptr);
 }

@@ -48,31 +48,46 @@ void Session::getRequest() {
 }
 
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
-	Location retLocation;
-	for (size_t i = 0; i < locations.size(); ++i) {
-		if (url.find(locations[i].getLocationName()) != std::string::npos)
-			retLocation = locations[i];
-	}
-	return retLocation;
+	for (size_t i = 0; i < locations.size(); ++i)
+		if (url.find(locations[i].getLocationName()) != std::string::npos || url == locations[i].getLocationName())
+			return locations[i];
+	return Location();
 }
 
 void Session::sendAnswer() {
-	std::cout << std::endl << "MAP'S CONTENT" << std::endl;
-	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
-		std::cout << it->first << it->second << std::endl;
+//	std::cout << std::endl << "MAP'S CONTENT" << std::endl;
+//	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
+//		std::cout << it->first << it->second << std::endl;
 
-	std::string path;
+	std::string endPathForFile;
 	std::string url = header.at("Path:");
 	Config config = socket.getConfig();
-//	Location location = getMyLocation(config.getLocations(), url);
+	Location location;
+	if (!config.getLocations().empty())
+		location = getMyLocation(config.getLocations(), url);
+
+	// check on methods
+	if (location.isMethodAvailable(header.at("Method:")) == false)
+		exit(1);
 
 
-
-
-
-    std::ifstream fin(path);
+	std::ifstream fin("location.getRoot()" + url);
 	if (!fin.is_open())
-		exit(-1);
+		std::cout << "cannot open relative path. Try to open index..." << std::endl;
+
+	if (location.getIndex() != nullptr) {
+		std::ifstream fin("location.getRoot()" + location.getLocationName() + location.getIndex());
+		if (!fin.is_open())  {
+			std::cout << "cannot open index" << std::endl;
+//			404
+			exit(-1);
+		}
+	}
+
+	std::cout << "url from client = " << url << std::endl;
+	std::cout << "location name = " << location.getLocationName() << std::endl;
+
+
     std::string line;
     std::stringstream response_body;
     while (std::getline(fin, line)) {
@@ -82,24 +97,11 @@ void Session::sendAnswer() {
     }
 
     std::stringstream response;
-	if (path == "www/index.html") {
-		response << "HTTP/1.1 200 OK\n" // depends on parseRequest
-				 << "Host: localhost:8000\n" // server_name from .conf
-				 << "Content-Type: text/html; charset=UTF-8\n" // depends on path text/html for html, image/x-icon
-				 << "Connection: close\n"
-				 << "Content-Length: " << response_body.str().length() <<"\n"
-				 << "\n"
-				 << response_body.str();
-	}
-	else if (path == "www/images/favicon.ico") {
-		response << "HTTP/1.1 200 OK\n" // depends on parseRequest
-				 << "Host: localhost:8000\n" // does it mean client's ip:port? (server's ip:port)
-				 << "Content-Type: image/avif\n" // depends on path text/html for html, image/x-icon
-				 << "Connection: close\n"
-				 << "Content-Length: " << response_body.str().length() <<"\n"
-				 << "\n"
-				 << response_body.str();
-	}
+	response << "HTTP/1.1 200 OK\n" // depends on parseRequest
+			 << "Host: " << config.getServerName() << "\n" // does it mean client's ip:port? (server's ip:port)
+			 << "Content-Length: " << response_body.str().length() <<"\n"
+			 << "\n"
+			 << response_body.str();
 
 
     send(fd, response.str().c_str(), response.str().length(), 0);

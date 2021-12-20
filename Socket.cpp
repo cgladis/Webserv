@@ -17,6 +17,7 @@ Socket::Socket(const Socket &other) {
 
 Socket const &Socket::operator=(const Socket &other) {
     this->fd = other.fd;
+	this->config = other.config;
     return *this;
 }
 
