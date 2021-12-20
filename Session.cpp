@@ -21,8 +21,6 @@ void Session::parseRequest() {
 	std::string firstLineHeader[3] = {"Method:", "Path:", "HttpVersion:"};
 	for (size_t i = 0; i < 3; ++i) {
 		localSs >> curWord;
-		if (i == 1)
-			curWord.erase(0, 1);
 		header.insert(std::make_pair(firstLineHeader[i], curWord));
 	}
 
@@ -49,18 +47,29 @@ void Session::getRequest() {
 	}
 }
 
+Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
+	Location retLocation;
+	for (size_t i = 0; i < locations.size(); ++i) {
+		if (url.find(locations[i].getLocationUrl()) != std::string::npos)
+			retLocation = locations[i];
+	}
+	return retLocation;
+}
+
 void Session::sendAnswer() {
-	Config config = socket.getConfig();
 	std::cout << std::endl << "MAP'S CONTENT" << std::endl;
 	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
 		std::cout << it->first << it->second << std::endl;
 
-//	1) take path and try to open this file, if exist get this file to client
-//	2)
-//	3) combine root + index and try to find the file, if exist get this file to client
-//	(if file wasn't found after (3) get 404 page;
+	std::string path;
+	std::string url = header.at("Path:");
+	Config config = socket.getConfig();
+	Location location = getMyLocation(config.getLocations(), url);
 
-	std::string path = header.at("Path:");
+	
+
+
+
     std::ifstream fin(path);
 	if (!fin.is_open())
 		exit(-1);
@@ -75,7 +84,7 @@ void Session::sendAnswer() {
     std::stringstream response;
 	if (path == "www/index.html") {
 		response << "HTTP/1.1 200 OK\n" // depends on parseRequest
-				 << "Host: localhost:8000\n" // does it mean client's ip:port?
+				 << "Host: localhost:8000\n" // server_name from .conf
 				 << "Content-Type: text/html; charset=UTF-8\n" // depends on path text/html for html, image/x-icon
 				 << "Connection: close\n"
 				 << "Content-Length: " << response_body.str().length() <<"\n"
