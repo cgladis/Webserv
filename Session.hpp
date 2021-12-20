@@ -40,7 +40,7 @@ private:
     std::string request;
 
 	Socket &socket;
-	// keys (method, path, content-length, connection, apply, частямиИлиЦелымПередаетсяБади
+	// keys (method, path, httpVersion, accept, content-length, connection, apply, transfer-encoding(chunked)
 	std::map<std::string, std::string> header;
 };
 

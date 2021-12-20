@@ -21,26 +21,7 @@ Socket const &Socket::operator=(const Socket &other) {
 }
 
 Socket::~Socket() {
-//    close(fd);
 }
-
-//void Socket::bind(int port) {
-//
-//	//create sockaddr
-//	sockaddr_in socketAddr;
-//	socketAddr.sin_family = AF_INET;
-//	socketAddr.sin_port = htons(port);
-//	socketAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-//
-//	//delete locked port
-//	int opt = 1;
-//	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-//
-//	//bind port
-//    if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
-//        throw std::runtime_error("Bind error!");
-//    std::cout << "bind Ok" << std::endl;
-//}
 
 void Socket::bind(int port, IPAddress ipAddress) {
 
@@ -81,16 +62,3 @@ void Socket::setConfig(const Config& conf) {
 Config Socket::getConfig() const {
 	return config;
 }
-
-
-//void Socket::addClient(Session client) {
-//    this->sessions.push_back(client);
-//}
-
-//void Socket::fillReadfdsAndWritefds(fd_set *readfds, fd_set *writefds, int *max_fd) {
-//    for (size_t i = 0; i < sessions.size(); ++i) {
-//        FD_SET(sessions[i].get_fd(), readfds);
-//        FD_SET(sessions[i].get_fd(), writefds);
-//        *max_fd = std::max(sessions[i].get_fd(), *max_fd);
-//    }
-//}

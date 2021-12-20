@@ -7,21 +7,28 @@
 
 Session::Session(int fd, Socket &socket): fd(fd), socket(socket) {
     std::cout << "New session: " << fd << std::endl;
-//	this->socket = socket;
     respondReady = false;
 }
 
-
 void Session::parseRequest() {
 	std::stringstream ss(request);
+	std::string curLine;
 	std::string curWord;
+	size_t startPos;
 
-	for (int i = 0; std::getline(ss, curWord, ' '); ++i) {
-		if (i == 0)
-			header.insert(std::pair<std::string, std::string>("method", curWord));
+	std::getline(ss, curLine);
+	std::stringstream localSs(curLine);
+	std::string firstLineHeader[3] = {"Method:", "Path:", "HttpVersion:"};
+	for (size_t i = 0; i < 3; ++i) {
+		localSs >> curWord;
 		if (i == 1)
-			header.insert(std::pair<std::string, std::string>("path", curWord));
-		// need to parse all data
+			curWord.erase(0, 1);
+		header.insert(std::make_pair(firstLineHeader[i], curWord));
+	}
+
+	while (std::getline(ss, curLine)) {
+		startPos = curLine.find(':');
+		header.insert(std::make_pair(curLine.substr(0, startPos + 1), curLine.substr(startPos + 2)));
 	}
 }
 
@@ -38,34 +45,23 @@ void Session::getRequest() {
 	}
 	else {
 		respondReady = true;
-		std::cout << request << std::endl;
+		parseRequest();
 	}
-	parseRequest();
 }
 
 void Session::sendAnswer() {
 	Config config = socket.getConfig();
+	std::cout << std::endl << "MAP'S CONTENT" << std::endl;
+	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
+		std::cout << it->first << it->second << std::endl;
 
-	// go through all paths in each location and find the same to path from request (if no -> 404)
-	// check if request method does exist in location method vector (if no -> ???)
-	// make new string = root + index and try to
-	// 		if (method == GET)
-	// 			open it for read and return to client (if file wasn't found) -> 404
-	//		if (method == DELETE)
-	//			delete it (if file wasn't found) -> 404
-	//		if (method == POST)
-	//			add data to server or execve(exec from location) ??
+//	1) take path and try to open this file, if exist get this file to client
+//	2)
+//	3) combine root + index and try to find the file, if exist get this file to client
+//	(if file wasn't found after (3) get 404 page;
 
-//	sendAnswerOnGetRequest();
-
-	std::string path;
-
-	if (header.at("path") == "/")
-		path = "www/index.html";
-	else if (header.at("path") == "/images/favicon.ico")
-		path = "www/images/favicon.ico";
-	std::cout << path << std::endl;
-    std::ifstream fin(path); // path cannot start with '/'
+	std::string path = header.at("Path:");
+    std::ifstream fin(path);
 	if (!fin.is_open())
 		exit(-1);
     std::string line;
