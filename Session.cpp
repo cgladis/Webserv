@@ -72,12 +72,16 @@ Location getMyLocation(const std::vector<Location> &locations, const std::string
 	return locations[locations.size() - 1];
 }
 
-void handleAsFile(const std::string &str) {
-//	if (access(str.c_str(), R_OK) == 1)
-//		403;
-	std::ifstream fin(str);
+void Session::errorPageHandle(const int &code) {
+	(void)code;
+}
+
+void Session::handleAsFile() {
+	if (access(path.c_str(), R_OK) == 1)
+		errorPageHandle(403);
+	std::ifstream fin(path);
 	if (!fin.is_open())
-		exit(-1);
+		throw std::runtime_error("file wasn't opened");
 	std::string line;
 	std::stringstream response_body;
 	while (std::getline(fin, line)) {
@@ -113,20 +117,18 @@ void Session::sendAnswer() {
 	if (!config.getLocations().empty())
 		location = getMyLocation(config.getLocations(), url);
 
-	// www == location.getRoot()
-	// index.html = location.getIndex()
-	std::string str;
-	str = location.getLocationName() == "/" ? "www" + url : "www" + url.substr(location.getLocationName().size());
+	path = location.getRoot();
+	if (location.getLocationName() != "/")
+		path.append(url.substr(location.getLocationName().size()));
 
 	struct stat st = {};
-	stat(str.c_str(), &st);
-	if (S_ISREG(st.st_mode)) {
-		handleAsFile(str);
-	}
+	stat(path.c_str(), &st);
+	if (S_ISREG(st.st_mode))
+		handleAsFile();
 	else if (S_ISDIR(st.st_mode)) {
 		if (location.getIndex() != nullptr) {
-			str.append(location.getIndex());
-			handleAsFile(str);
+			path.append(location.getIndex());
+			handleAsFile();
 		} else if (location.isAutoIndexOn()) {
 			// list all files in directory
 			// check access

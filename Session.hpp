@@ -28,7 +28,9 @@ public:
 	void parseRequest();
     void getRequest();
     void sendAnswer();
-
+	void handleAsFile();
+//	void autoindexHandle();
+	void errorPageHandle(const int &);
 	const Socket &getSocket();
     int get_fd() const;
     bool areRespondReady() const;
@@ -37,6 +39,7 @@ private:
     int fd;
     bool respondReady;
     std::string request;
+	std::string path;
 
 	Socket &socket;
 	std::map<std::string, std::string> header;
