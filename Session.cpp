@@ -4,16 +4,19 @@
 
 #include "Session.hpp"
 #include "AllConfigs.hpp"
+std::vector<std::string> split(const std::string& s, char delimiter);
 
 Session::Session(int fd, Socket &socket): fd(fd), socket(socket) {
-    std::cout << "New session: " << fd << std::endl;
+//    std::cout << "New session: " << fd << std::endl;
     respondReady = false;
 }
 
 void Session::parseRequest() {
+//	std::cout << request << std::endl;
 	std::stringstream ss(request);
 	std::string curLine;
 	std::string curWord;
+	std::string localTheme;
 	size_t startPos;
 
 	std::getline(ss, curLine);
@@ -25,8 +28,11 @@ void Session::parseRequest() {
 	}
 
 	while (std::getline(ss, curLine)) {
+		if (curLine.empty())
+			break;
 		startPos = curLine.find(':');
-		header.insert(std::make_pair(curLine.substr(0, startPos + 1), curLine.substr(startPos + 2)));
+		localTheme = curLine.substr(startPos + 2);
+		header.insert(std::make_pair(curLine.substr(0, startPos + 1), localTheme));
 	}
 }
 
@@ -35,77 +41,99 @@ void Session::getRequest() {
 	unsigned long length;
 
 	length = recv(fd, buff, BUFF_SIZE, 0);
-	if (length < 0 )
+	if (length == 0)
+		throw std::runtime_error("connection is closed");
+	else if (length < 0 )
 		throw std::runtime_error("receiving info error");
-	else if (length == BUFF_SIZE) {
+	else if (length == BUFF_SIZE || (length > 0 && length < BUFF_SIZE)) {
 		buff[length] = 0;
 		request.append(buff);
+		respondReady = (length > 0 && length < BUFF_SIZE);
 	}
-	else {
-		respondReady = true;
-		parseRequest();
-	}
+	else
+		throw std::runtime_error("unknown error");
 }
 
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
-	for (size_t i = 0; i < locations.size(); ++i)
-		if (url.find(locations[i].getLocationName()) != std::string::npos || url == locations[i].getLocationName())
-			return locations[i];
-	return Location();
+	if (url == "/")
+		return locations[locations.size() - 1];
+	std::vector<std::string> urlWords = split(url, '/');
+	for (size_t i = 0; i < locations.size(); ++i) {
+		std::vector<std::string> locationWords = split(locations[i].getLocationName(), '/');
+		for (size_t l = 0; l < locationWords.size(); ++l)
+			if (urlWords[l] == locationWords[l]) {
+				if (l + 1 == locationWords.size())
+					return locations[i];
+				continue;
+			}
+			else
+				break;
+	}
+	return locations[locations.size() - 1];
+}
+
+void handleAsFile(const std::string &str) {
+//	if (access(str.c_str(), R_OK) == 1)
+//		403;
+	std::ifstream fin(str);
+	if (!fin.is_open())
+		exit(-1);
+	std::string line;
+	std::stringstream response_body;
+	while (std::getline(fin, line)) {
+		response_body << line;
+		if (!fin.eof())
+			response_body << "\n";
+	}
+
+	std::stringstream response;
+	response << "HTTP/1.1 200 OK\n"
+			 << "Connection: close"
+			 << "Content-Type: text/html"
+			 << "Content-Length: " << response_body.str().length() <<"\n"
+			 << "\n"
+			 << response_body.str();
+
+	int length = (int)send(fd, response.str().c_str(), response.str().length(), 0);
+	if (length < 0)
+		throw std::runtime_error("error sending data");
+	else if (length == 0)
+		throw std::runtime_error("error");
 }
 
 void Session::sendAnswer() {
-//	std::cout << std::endl << "MAP'S CONTENT" << std::endl;
+	parseRequest();
+//	std::cout << "MAP'S CONTENT" << std::endl;
 //	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
 //		std::cout << it->first << it->second << std::endl;
 
-	std::string endPathForFile;
 	std::string url = header.at("Path:");
 	Config config = socket.getConfig();
 	Location location;
 	if (!config.getLocations().empty())
 		location = getMyLocation(config.getLocations(), url);
 
-	// check on methods
-	if (location.isMethodAvailable(header.at("Method:")) == false)
-		exit(1);
+	// www == location.getRoot()
+	// index.html = location.getIndex()
+	std::string str;
+	str = location.getLocationName() == "/" ? "www" + url : "www" + url.substr(location.getLocationName().size());
 
-
-	std::ifstream fin("location.getRoot()" + url);
-	if (!fin.is_open())
-		std::cout << "cannot open relative path. Try to open index..." << std::endl;
-
-	if (location.getIndex() != nullptr) {
-		std::ifstream fin("location.getRoot()" + location.getLocationName() + location.getIndex());
-		if (!fin.is_open())  {
-			std::cout << "cannot open index" << std::endl;
-//			404
-			exit(-1);
-		}
+	struct stat st = {};
+	stat(str.c_str(), &st);
+	if (S_ISREG(st.st_mode)) {
+		handleAsFile(str);
 	}
-
-	std::cout << "url from client = " << url << std::endl;
-	std::cout << "location name = " << location.getLocationName() << std::endl;
-
-
-    std::string line;
-    std::stringstream response_body;
-    while (std::getline(fin, line)) {
-        response_body << line;
-        if (!fin.eof())
-            response_body << "\n";
-    }
-
-    std::stringstream response;
-	response << "HTTP/1.1 200 OK\n" // depends on parseRequest
-			 << "Host: " << config.getServerName() << "\n" // does it mean client's ip:port? (server's ip:port)
-			 << "Content-Length: " << response_body.str().length() <<"\n"
-			 << "\n"
-			 << response_body.str();
-
-
-    send(fd, response.str().c_str(), response.str().length(), 0);
-
+	else if (S_ISDIR(st.st_mode)) {
+		if (location.getIndex() != nullptr) {
+			str.append(location.getIndex());
+			handleAsFile(str);
+		} else if (location.isAutoIndexOn()) {
+			// list all files in directory
+			// check access
+		} else
+			return;
+		//no index, no autoindex and it is direcotry! error
+	}
 }
 
 bool Session::areRespondReady() const {
@@ -117,7 +145,7 @@ int Session::get_fd() const {
 }
 
 Session::~Session() {
-    std::cout << "Session's " << fd << " was closed" << std::endl;
+//    std::cout << "Session's " << fd << " was closed" << std::endl;
 }
 
 const Socket &Session::getSocket() {
@@ -128,4 +156,21 @@ Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
 	this->socket = oth.socket;
 	return *this;
+}
+
+std::vector<std::string> split(const std::string& s, char delimiter)
+{
+	std::string news;
+	if (s[0] == '/')
+		news = s.substr(1);
+	else
+		news = s;
+	std::vector<std::string> tokens;
+	std::string token;
+	std::istringstream tokenStream(news);
+	while (std::getline(tokenStream, token, delimiter))
+	{
+		tokens.push_back(token);
+	}
+	return tokens;
 }

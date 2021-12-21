@@ -5,7 +5,7 @@
 #ifndef SESSION_HPP
 #define SESSION_HPP
 
-#include <sys/socket.h> //sockaddr
+#include <sys/socket.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -15,10 +15,9 @@
 #include "AllConfigs.hpp"
 #include "Socket.hpp"
 #include <map>
+#include <sys/stat.h>
 
 #define BUFF_SIZE 100
-
-//class Socket;
 
 class Session {
 public:
@@ -40,7 +39,6 @@ private:
     std::string request;
 
 	Socket &socket;
-	// keys (method, path, httpVersion, accept, content-length, connection, apply, transfer-encoding(chunked)
 	std::map<std::string, std::string> header;
 };
 

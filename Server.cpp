@@ -68,7 +68,7 @@ void Server::run() {
     while (!exit)
     {
         resSelect = mySelect();
-		std::cout << "SELECT : OK = " << resSelect << std::endl;
+//		std::cout << "SELECT : OK = " << resSelect << std::endl;
 
 		// if error occurred
 		if (resSelect <= 0) {
@@ -78,17 +78,17 @@ void Server::run() {
 
         for (size_t i = 0; i < listeningSockets.size(); ++i)
             if (FD_ISSET(listeningSockets[i].get_fd(), &readFds)) {
-                std::cout << "STATUS: CONNECT " << std::endl;
+//                std::cout << "STATUS: CONNECT " << std::endl;
                 connect(listeningSockets[i]); // connect event handling
             }
 
         for (size_t i = 0; i < sessions.size(); ++i) {
 			if (FD_ISSET(sessions[i].get_fd(), &readFds)){
-				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
+//				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
 				sessions[i].getRequest();
 			}
 			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()) {
-				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
+//				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
 				sessions[i].sendAnswer();
 				finishSession(i);
 			}
@@ -119,6 +119,6 @@ void Server::finishSession(size_t i) {
 	FD_CLR(sessions[i].get_fd(), &masWriteFds);
 	usleep(10000);
 	close(sessions[i].get_fd());
-	std::cout << "SESSION CLOSED. FD: " << sessions[i].get_fd() << std::endl;
+//	std::cout << "SESSION CLOSED. FD: " << sessions[i].get_fd() << std::endl;
 	sessions.erase(sessions.begin() + i);
 }
