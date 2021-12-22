@@ -5,6 +5,7 @@
 #include "Session.hpp"
 #include "AllConfigs.hpp"
 std::vector<std::string> split(const std::string& s, char delimiter);
+std::string formPath(const Location &location, const std::string &url);
 
 Session::Session(int fd, Socket &socket): fd(fd), socket(socket) {
 //    std::cout << "New session: " << fd << std::endl;
@@ -74,6 +75,7 @@ Location getMyLocation(const std::vector<Location> &locations, const std::string
 
 void Session::errorPageHandle(const int &code) {
 	(void)code;
+	std::ifstream erPage;
 }
 
 void Session::handleAsFile() {
@@ -116,26 +118,25 @@ void Session::sendAnswer() {
 	Location location;
 	if (!config.getLocations().empty())
 		location = getMyLocation(config.getLocations(), url);
-
-	path = location.getRoot();
-	if (location.getLocationName() != "/")
-		path.append(url.substr(location.getLocationName().size()));
+	path = formPath(location, url);
 
 	struct stat st = {};
 	stat(path.c_str(), &st);
 	if (S_ISREG(st.st_mode))
 		handleAsFile();
 	else if (S_ISDIR(st.st_mode)) {
-		if (location.getIndex() != nullptr) {
+		if (!location.getIndex().empty()) {
 			path.append(location.getIndex());
 			handleAsFile();
-		} else if (location.isAutoIndexOn()) {
-			// list all files in directory
+		} else if (location.isAutoIndex()) {
 			// check access
+			// list all files in directory
 		} else
 			return;
 		//no index, no autoindex and it is direcotry! error
 	}
+	else
+		errorPageHandle(404);
 }
 
 bool Session::areRespondReady() const {
@@ -171,8 +172,20 @@ std::vector<std::string> split(const std::string& s, char delimiter)
 	std::string token;
 	std::istringstream tokenStream(news);
 	while (std::getline(tokenStream, token, delimiter))
-	{
 		tokens.push_back(token);
-	}
 	return tokens;
+}
+
+std::string formPath(const Location &location, const std::string &url) {
+	std::string path;
+	path = "www"; // location.getRoot();
+	if ((url == location.getLocationName() || url == location.getLocationName() + "/") && !location.getIndex().empty()) {
+		path.append("/");
+		path.append(location.getIndex());
+	}
+	else if (url.size() > location.getLocationName().size()) {
+		if (location.getLocationName() == "/")
+			path.append("/");
+		path.append(url.substr(location.getLocationName().size()));
+	}
 }

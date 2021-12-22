@@ -24,6 +24,9 @@ public:
 	std::string getLocationName() const;
     void AddMethod(method method);
     void addIndex(std::string index);
+	bool isAutoIndex() const;
+	const std::string &getIndex() const;
+	bool isMethodAvailable(const std::string &);
 
 private:
     std::string locationName;

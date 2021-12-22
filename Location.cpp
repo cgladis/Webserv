@@ -53,3 +53,16 @@ bool Location::operator<(const Location &oth) const {
 std::string Location::getLocationName() const{
 	return locationName;
 }
+
+bool Location::isAutoIndex() const {
+	return autoindex;
+}
+
+const std::string &Location::getIndex() const {
+	return index;
+}
+
+bool Location::isMethodAvailable(const std::string &method) {
+	(void)method;
+	return true;
+}
