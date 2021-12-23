@@ -8,7 +8,6 @@
 #include <vector>
 #include <iostream>
 //#include <string>
-#include "IPAddress.hpp"
 #include "Location.hpp"
 
 //
@@ -23,7 +22,7 @@
 class Config {
 
 public:
-    Config(){}
+    Config(){};
     Config(const Config&);
 
     Config &operator = (const Config&);
@@ -36,13 +35,13 @@ public:
     void addLocation(std::string locationName);
     Location &getLastLocation();
 	std::vector<Location> getLocations();
-
-    IPAddress getIP();
+	std::string getServerName() const;
     int getPort();
+	std::string getIP() const;
 
 private:
 
-    IPAddress ip;
+	std::string ip;
     int port;
     std::string server_name;
     std::string error_page;

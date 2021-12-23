@@ -30,10 +30,6 @@ void Config::addLocation(std::string locationName) {
     this->locations.push_back(Location(locationName));
 }
 
-IPAddress Config::getIP() {
-    return ip;
-}
-
 int Config::getPort() {
     return port;
 }
@@ -60,4 +56,10 @@ std::vector<Location> Config::getLocations() {
 	return locations;
 }
 
+std::string Config::getServerName() const {
+	return server_name;
+}
 
+std::string Config::getIP() const {
+	return ip;
+}

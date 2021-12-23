@@ -8,18 +8,13 @@
 
 int main(){
 
-//    try {
 	AllConfigs configs("webserv.conf");
-//    } catch (std::runtime_error &ex) {
-//        std::cout << ex.what();
-//        exit(0);
-//    }
+	configs.checkServerNames();
 
-    Server webServer;
-
+	Server server;
     try {
-		webServer.addServers(configs);
-        webServer.run();
+		server.addServers(configs);
+        server.run(configs);
 	}
     catch (std::runtime_error &ex) {
         std::cout << "ERROR - " << ex.what() << std::endl;

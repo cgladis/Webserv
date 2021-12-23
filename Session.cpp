@@ -7,7 +7,7 @@
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
 
-Session::Session(int fd, Socket &socket): fd(fd), socket(socket) {
+Session::Session(int fd, const Socket& sock): fd(fd), sesSocket(sock) {
 //    std::cout << "New session: " << fd << std::endl;
     respondReady = false;
 }
@@ -49,7 +49,8 @@ void Session::getRequest() {
 	else if (length == BUFF_SIZE || (length > 0 && length < BUFF_SIZE)) {
 		buff[length] = 0;
 		request.append(buff);
-		respondReady = (length > 0 && length < BUFF_SIZE);
+		if ((respondReady = (length > 0 && length < BUFF_SIZE)))
+			parseRequest();
 	}
 	else
 		throw std::runtime_error("unknown error");
@@ -107,14 +108,14 @@ void Session::handleAsFile() {
 		throw std::runtime_error("error");
 }
 
-void Session::sendAnswer() {
-	parseRequest();
-//	std::cout << "MAP'S CONTENT" << std::endl;
+void Session::sendAnswer(const AllConfigs &configs) {
+	std::cout << "MAP'S CONTENT" << std::endl;
 //	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
 //		std::cout << it->first << it->second << std::endl;
 
 	std::string url = header.at("Path:");
-	Config config = socket.getConfig();
+
+	config = configs.getRightConfig(header.at("Host:"), sesSocket);
 	Location location;
 	if (!config.getLocations().empty())
 		location = getMyLocation(config.getLocations(), url);
@@ -127,7 +128,7 @@ void Session::sendAnswer() {
 	else if (S_ISDIR(st.st_mode)) {
 		if (!location.getIndex().empty()) {
 			path.append(location.getIndex());
-			handleAsFile();
+				handleAsFile();
 		} else if (location.isAutoIndex()) {
 			// check access
 			// list all files in directory
@@ -151,15 +152,23 @@ Session::~Session() {
 //    std::cout << "Session's " << fd << " was closed" << std::endl;
 }
 
-const Socket &Session::getSocket() {
-	return socket;
-}
-
 Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
-	this->socket = oth.socket;
 	return *this;
 }
+
+Config Session::getConfig() const {
+	return config;
+}
+
+void Session::setConfig(const Config &conf) {
+	this->config = conf;
+}
+
+Socket Session::getSocket() const {
+	return sesSocket;
+}
+
 
 std::vector<std::string> split(const std::string& s, char delimiter)
 {
@@ -178,14 +187,14 @@ std::vector<std::string> split(const std::string& s, char delimiter)
 
 std::string formPath(const Location &location, const std::string &url) {
 	std::string path;
-	path = "www"; // location.getRoot();
+	path = "./www"; // location.getRoot();
 	if ((url == location.getLocationName() || url == location.getLocationName() + "/") && !location.getIndex().empty()) {
-		path.append("/");
-		path.append(location.getIndex());
+		path.append("/").append(location.getIndex());
 	}
 	else if (url.size() > location.getLocationName().size()) {
 		if (location.getLocationName() == "/")
 			path.append("/");
 		path.append(url.substr(location.getLocationName().size()));
 	}
+	return path;
 }

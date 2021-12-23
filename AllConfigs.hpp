@@ -9,16 +9,22 @@
 #include <iostream>
 #include <fstream>
 #include "Config.hpp"
+#include "Socket.hpp"
 
 class AllConfigs: public std::vector<Config>{
 
 public:
     AllConfigs(const std::string& filename);
+	void checkServerNames();
+	size_t getUniqIpPortVectorSize() const;
+	std::string getIpPort(size_t i) const;
+	Config getRightConfig(std::string, const Socket &) const;
 
 private:
     int count;
+	std::vector<std::string> uniqeIpPort;
+	std::vector<Config> configsWithDefaultSerName;
     std::string nextWord(std::string&);
-
     void parseListen(std::string &line, int fileLine);
     void parseServerName(std::string &line, int fileLine);
     void parseErrorPage(std::string &line, int fileLine);

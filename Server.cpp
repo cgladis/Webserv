@@ -28,21 +28,21 @@ Server::Server(): qlen(5), exit(false) {
 
 }
 
-void Server::addServers(AllConfigs configs) {
-
-	for (size_t i = 0; i < configs.size(); ++i) {
+void Server::addServers(const AllConfigs &configs) {
+	// создаем столько сокетов, сколько уникальных Ip Port
+	for (size_t i = 0; i < configs.getUniqIpPortVectorSize(); ++i) {
 		Socket sock = Socket();
 
-		sock.setConfig(configs[i]);
-
+		std::string ipPort = configs.getIpPort(i);
+		std::string ip = ipPort.substr(0, ipPort.find(':'));
+		int port = std::atoi(ipPort.substr(ipPort.find(':') + 1).c_str());
 		//make socket ready to work
-		sock.bind(configs[i].getPort(), configs[i].getIP());
+		sock.bind(ip, port);
 		sock.listen(qlen);
 		FD_SET(sock.get_fd(), &masReadFds);
 		listeningSockets.push_back(sock);
 
-		std::cout << "Start server http://" << configs[i].getIP() << ":"
-				  << configs[i].getPort() << "/" << std::endl;
+		std::cout << "Start server http://" << configs.getIpPort(i) << "/" << std::endl;
 	}
 }
 
@@ -57,12 +57,7 @@ int Server::mySelect() {
     return select(getMaxFd() + 1, &readFds, &writeFds, nullptr, nullptr);
 }
 
-void Server::answerSocket() {
-
-}
-
-
-void Server::run() {
+void Server::run(const AllConfigs &configs) {
     int resSelect;
 
     while (!exit)
@@ -70,7 +65,6 @@ void Server::run() {
         resSelect = mySelect();
 //		std::cout << "SELECT : OK = " << resSelect << std::endl;
 
-		// if error occurred
 		if (resSelect <= 0) {
 			handleSelectError(resSelect);
 			continue;
@@ -78,7 +72,6 @@ void Server::run() {
 
         for (size_t i = 0; i < listeningSockets.size(); ++i)
             if (FD_ISSET(listeningSockets[i].get_fd(), &readFds)) {
-//                std::cout << "STATUS: CONNECT " << std::endl;
                 connect(listeningSockets[i]); // connect event handling
             }
 
@@ -89,7 +82,7 @@ void Server::run() {
 			}
 			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()) {
 //				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
-				sessions[i].sendAnswer();
+				sessions[i].sendAnswer(configs);
 				finishSession(i);
 			}
 		}

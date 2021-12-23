@@ -136,7 +136,6 @@ void AllConfigs::parseReturn(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
-
 }
 
 void AllConfigs::parseLocation(std::string &line, int fileLine) {
@@ -149,11 +148,9 @@ void AllConfigs::parseLocation(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
-
 }
 
 void AllConfigs::parseMethods(std::string &line, int fileLine) {
-
     std::string word;
     try {
         while (word != ";"){
@@ -189,6 +186,69 @@ void AllConfigs::parseIndex(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+}
+
+void AllConfigs::checkServerNames() {
+	Config conf1, conf2;
+	for (size_t i = 0; i < this->size() - 1; ++i) {
+		conf1 = this->operator[](i);
+		for (size_t l = i + 1; l < this->size(); ++l) {
+			conf2 = this->operator[](l);
+			if (conf1.getIP() == conf2.getIP()
+			&& conf1.getPort() == conf2.getPort()
+			&& conf1.getServerName() == conf2.getServerName())
+				throw std::runtime_error("The same Ip:Port:ServerName");
+		}
+	}
+	// вектор с дефолтным server_name
+	for (size_t i = 0; i < this->size(); ++i) {
+		if (this->operator[](i).getServerName().empty())
+			configsWithDefaultSerName.push_back(this->operator[](i));
+	}
+
+	// вектор уникальных ip:port
+	std::string ipPort;
+	for (size_t i = 0; i < this->size(); ++i) {
+		conf1 = this->operator[](i);
+		ipPort = conf1.getIP() + ":" + std::to_string(conf1.getPort());
+		if (std::find(uniqeIpPort.begin(), uniqeIpPort.end(), ipPort) == uniqeIpPort.end())
+			uniqeIpPort.push_back(ipPort);
+	}
+
+	// сравниваем их размеры
+	if (uniqeIpPort.size() != configsWithDefaultSerName.size())
+		throw std::runtime_error("err with Ip Port ServerName");
+}
+
+size_t AllConfigs::getUniqIpPortVectorSize() const {
+	return uniqeIpPort.size();
+}
+
+std::string AllConfigs::getIpPort(size_t i) const {
+	if (i > uniqeIpPort.size())
+		throw std::runtime_error("too big value");
+	return uniqeIpPort[i];
+}
+
+Config AllConfigs::getRightConfig(std::string hostName, const Socket &socket) const {
+	hostName = hostName.substr(0, hostName.find(':'));
+	std::vector<Config> sameIpPortConfs;
+	std::string ip = socket.getIP();
+	int port = socket.getPort();
+	Config confSerName;
+	Config confDefault;
+	for (size_t i = 0; i < this->size(); ++i) {
+		confSerName = this->operator[](i);
+		if (confSerName.getPort() == port && confSerName.getIP() == ip && this->operator[](i).getServerName().empty()) {
+			confDefault = this->operator[](i);
+		}
+		else if (confSerName.getPort() == port && confSerName.getIP() == ip && hostName == this->operator[](i)
+		.getServerName()) {
+			confSerName = this->operator[](i);
+			return confSerName;
+		}
+	}
+	return confDefault;
 }
 
 

@@ -21,27 +21,29 @@
 
 class Session {
 public:
-    Session(int fd, Socket &socket);
+    Session(int fd, const Socket &);
 	Session &operator=(const Session& oth);
     ~Session();
 
 	void parseRequest();
     void getRequest();
-    void sendAnswer();
+    void sendAnswer(const AllConfigs &);
 	void handleAsFile();
 //	void autoindexHandle();
 	void errorPageHandle(const int &);
-	const Socket &getSocket();
     int get_fd() const;
     bool areRespondReady() const;
+	Config getConfig() const;
+	void setConfig(const Config &);
+	Socket getSocket() const;
 
 private:
     int fd;
     bool respondReady;
     std::string request;
 	std::string path;
-
-	Socket &socket;
+	Config config;
+	Socket sesSocket;
 	std::map<std::string, std::string> header;
 };
 

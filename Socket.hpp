@@ -10,7 +10,6 @@
 #include <netinet/in.h> //sockaddr_in
 #include <unistd.h> //close
 #include <fcntl.h> //fcntl
-#include "IPAddress.hpp"
 #include "Config.hpp"
 
 class Socket
@@ -22,15 +21,16 @@ public:
 	~Socket();
 
 
-	void bind(int port, IPAddress ipAddress);
+	void bind(const std::string &ip, int port);
     void listen(int qlen);
     int get_fd() const;
-    void setConfig(const Config& conf);
-	Config getConfig() const;
+	int getPort() const;
+	std::string getIP() const;
 
 private:
 	int fd;
-    Config config;
+	int locPort;
+	std::string locIp;
 };
 
 

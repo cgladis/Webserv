@@ -13,25 +13,19 @@
 
 class Server {
 public:
-//    Server(int port, std::string ipAddress);
     Server();
 
 	int getMaxFd();
-    void addServers(AllConfigs);
-    void run();
+    void addServers(const AllConfigs&);
+    void run(const AllConfigs &);
     void connect(Socket &currentSocket);
 	void finishSession(size_t i);
-//    void getRequest();
 
 private:
     int mySelect();
-
-//    void addClient(Session client);
-
     std::vector<Socket> listeningSockets;
     int qlen;
     bool exit;
-    void answerSocket();
     std::vector<Session> sessions;
 	fd_set writeFds, readFds, masWriteFds, masReadFds;
 };

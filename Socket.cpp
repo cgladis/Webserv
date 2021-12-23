@@ -2,6 +2,7 @@
 // Created by Александр Шоршин on 04.11.2021.
 //
 
+#include <arpa/inet.h>
 #include "Socket.hpp"
 #include "cerrno"
 
@@ -17,20 +18,22 @@ Socket::Socket(const Socket &other) {
 
 Socket const &Socket::operator=(const Socket &other) {
     this->fd = other.fd;
-	this->config = other.config;
+	this->locIp = other.locIp;
+	this->locPort = other.locPort;
     return *this;
 }
 
 Socket::~Socket() {
 }
 
-void Socket::bind(int port, IPAddress ipAddress) {
-
+void Socket::bind(const std::string &ip, int port) {
+	this->locIp = ip;
+	this->locPort = port;
 	//create sockaddr
 	sockaddr_in socketAddr;
 	socketAddr.sin_family = AF_INET;
 	socketAddr.sin_port = htons(port);
-	socketAddr.sin_addr.s_addr = ipAddress.inet_addr();
+	socketAddr.sin_addr.s_addr = ::inet_addr(ip.c_str());
 
 	//cancel locked port
 	int opt = 1;
@@ -41,8 +44,10 @@ void Socket::bind(int port, IPAddress ipAddress) {
 //    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
 	//bind port
-    if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1)
-        throw std::runtime_error("Bind error! (Socket::bind) " + std::string(std::strerror(errno)) );
+    if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1) {
+		std::cout << "Bind error! (Socket::bind) " + std::string(std::strerror(errno)) << std::endl;
+		return;
+	}
 //    std::cout << "bind Ok, port: " << ntohs(socketAddr.sin_port) << std::endl;
 }
 
@@ -56,10 +61,12 @@ int Socket::get_fd() const{
 	return fd;
 }
 
-void Socket::setConfig(const Config& conf) {
-    config = conf;
+int Socket::getPort() const {
+	return locPort;
 }
 
-Config Socket::getConfig() const {
-	return config;
+std::string Socket::getIP() const {
+	return locIp;
 }
+
+

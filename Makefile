@@ -3,9 +3,9 @@ NAME = webserv
 CC = clang++
 FLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
-SRC_NAME = webserv.cpp Config.cpp IPAddress.cpp Socket.cpp Server.cpp \
+SRC_NAME = webserv.cpp Config.cpp Socket.cpp Server.cpp \
 	Session.cpp AllConfigs.cpp Location.cpp
-HPP_FILES = Config.hpp IPAddress.hpp Socket.hpp Server.hpp \
+HPP_FILES = Config.hpp Socket.hpp Server.hpp \
 	Session.hpp AllConfigs.hpp Location.hpp
 OBJ_PATH = ./obj/
 
