@@ -30,13 +30,14 @@ public:
     void getRequest();
     void sendAnswer(const AllConfigs &);
 	void handleAsFile();
-	void handleAsDir();
+	void handleAsDir(const std::string &);
 	void errorPageHandle(const int &);
     int get_fd() const;
     bool areRespondReady() const;
 
 private:
     int fd;
+	std::string ref;
     bool respondReady;
     std::string request;
 	std::string path;

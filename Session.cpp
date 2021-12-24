@@ -43,7 +43,7 @@ void Session::getRequest() {
 	length = recv(fd, buff, BUFF_SIZE, 0);
 	if (length == 0)
 		throw std::runtime_error("connection is closed");
-	else if (length < 0 )
+	if (length < 0 )
 		throw std::runtime_error("receiving info error");
 	else if (length == BUFF_SIZE || (length > 0 && length < BUFF_SIZE)) {
 		buff[length] = 0;
@@ -94,7 +94,7 @@ void makeAndSendResponse(int fd, int code, const std::string& response_body) {
 		throw std::runtime_error("error");
 }
 
-void Session::handleAsDir() {
+void Session::handleAsDir(const std::string &url) {
 	if (access(path.c_str(), R_OK) == 1)
 		errorPageHandle(403);
 	DIR* dir = opendir(path.c_str());
@@ -104,18 +104,21 @@ void Session::handleAsDir() {
 	response_body << "<!DOCTYPE html>\n"
 					 "<html lang=\"en\">\n"
 					 "<head>\n"
-					 "    <link rel=\"shortcut icon\" href=\"favicon.ico\">\n"
+					 "    <link rel=\"shortcut icon\" href=\"images/favicon.ico\">\n"
 					 "    <meta charset=\"UTF-8\">\n"
 					 "    <title>Title</title>\n"
 					 "</head>\n"
-					 "<body>\n";
-	response_body << "<ul>";
+					 "<body>\n"
+					 "<ul>\n";
 	while ((stDir = readdir(dir)) != nullptr) {
-		response_body << "<li><a href=\"" << stDir->d_name << "\">" << stDir->d_name << "</a></li>";
+		if (url == "/")
+			response_body << "<li><a href=\"" << url + stDir->d_name << "\">" << stDir->d_name << "</a></li>\n";
+		else
+			response_body << "<li><a href=\"" << url + "/" + stDir->d_name << "\">" << stDir->d_name << "</a></li>\n";
 	}
-	response_body << "</ul>"
-					 "</body>"
-					 "</html>";
+	response_body << "</ul>\n"
+					 "</body>\n"
+					 "</html>\n";
 
 	makeAndSendResponse(fd, 200, response_body.str());
 	if (closedir(dir) == -1)
@@ -161,7 +164,7 @@ void Session::sendAnswer(const AllConfigs &configs) {
 			path.append(location.getIndex());
 				handleAsFile();
 		} else if (location.isAutoIndex()) {
-			handleAsDir();
+			handleAsDir(url);
 		} else
 			return;
 		//no index, no autoindex and it is direcotry! error
