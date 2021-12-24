@@ -22,8 +22,8 @@ public:
 
 
 	void bind(const std::string &ip, int port);
-    void listen(int qlen);
-    int get_fd() const;
+	void listen(int qlen);
+	int get_fd() const;
 	int getPort() const;
 	std::string getIP() const;
 

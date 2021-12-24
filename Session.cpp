@@ -13,7 +13,6 @@ Session::Session(int fd, const Socket& sock): fd(fd), sesSocket(sock) {
 }
 
 void Session::parseRequest() {
-//	std::cout << request << std::endl;
 	std::stringstream ss(request);
 	std::string curLine;
 	std::string curWord;
@@ -49,8 +48,9 @@ void Session::getRequest() {
 	else if (length == BUFF_SIZE || (length > 0 && length < BUFF_SIZE)) {
 		buff[length] = 0;
 		request.append(buff);
-		if ((respondReady = (length > 0 && length < BUFF_SIZE)))
+		if ((respondReady = (length > 0 && length < BUFF_SIZE))) {
 			parseRequest();
+		}
 	}
 	else
 		throw std::runtime_error("unknown error");
@@ -79,6 +79,49 @@ void Session::errorPageHandle(const int &code) {
 	std::ifstream erPage;
 }
 
+void makeAndSendResponse(int fd, int code, const std::string& response_body) {
+	std::stringstream response;
+	response << "HTTP/1.1" << code << "OK\n"
+			 << "Connection: close"
+			 << "Content-Type: text/html"
+			 << "Content-Length: " << response_body.length() <<"\n"
+			 << "\n"
+			 << response_body;
+	int length = (int)send(fd, response.str().c_str(), response.str().length(), 0);
+	if (length < 0)
+		throw std::runtime_error("error sending data");
+	else if (length == 0)
+		throw std::runtime_error("error");
+}
+
+void Session::handleAsDir() {
+	if (access(path.c_str(), R_OK) == 1)
+		errorPageHandle(403);
+	DIR* dir = opendir(path.c_str());
+	struct dirent* stDir;
+
+	std::stringstream response_body;
+	response_body << "<!DOCTYPE html>\n"
+					 "<html lang=\"en\">\n"
+					 "<head>\n"
+					 "    <link rel=\"shortcut icon\" href=\"favicon.ico\">\n"
+					 "    <meta charset=\"UTF-8\">\n"
+					 "    <title>Title</title>\n"
+					 "</head>\n"
+					 "<body>\n";
+	response_body << "<ul>";
+	while ((stDir = readdir(dir)) != nullptr) {
+		response_body << "<li><a href=\"" << stDir->d_name << "\">" << stDir->d_name << "</a></li>";
+	}
+	response_body << "</ul>"
+					 "</body>"
+					 "</html>";
+
+	makeAndSendResponse(fd, 200, response_body.str());
+	if (closedir(dir) == -1)
+		throw std::runtime_error("error closing directory");
+}
+
 void Session::handleAsFile() {
 	if (access(path.c_str(), R_OK) == 1)
 		errorPageHandle(403);
@@ -92,24 +135,12 @@ void Session::handleAsFile() {
 		if (!fin.eof())
 			response_body << "\n";
 	}
-
-	std::stringstream response;
-	response << "HTTP/1.1 200 OK\n"
-			 << "Connection: close"
-			 << "Content-Type: text/html"
-			 << "Content-Length: " << response_body.str().length() <<"\n"
-			 << "\n"
-			 << response_body.str();
-
-	int length = (int)send(fd, response.str().c_str(), response.str().length(), 0);
-	if (length < 0)
-		throw std::runtime_error("error sending data");
-	else if (length == 0)
-		throw std::runtime_error("error");
+	std::string response;
+	makeAndSendResponse(fd, 200, response_body.str());
 }
 
 void Session::sendAnswer(const AllConfigs &configs) {
-	std::cout << "MAP'S CONTENT" << std::endl;
+//	std::cout << std::endl << "MAP'S CONTENT";
 //	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
 //		std::cout << it->first << it->second << std::endl;
 
@@ -130,8 +161,7 @@ void Session::sendAnswer(const AllConfigs &configs) {
 			path.append(location.getIndex());
 				handleAsFile();
 		} else if (location.isAutoIndex()) {
-			// check access
-			// list all files in directory
+			handleAsDir();
 		} else
 			return;
 		//no index, no autoindex and it is direcotry! error
@@ -156,19 +186,6 @@ Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
 	return *this;
 }
-
-Config Session::getConfig() const {
-	return config;
-}
-
-void Session::setConfig(const Config &conf) {
-	this->config = conf;
-}
-
-Socket Session::getSocket() const {
-	return sesSocket;
-}
-
 
 std::vector<std::string> split(const std::string& s, char delimiter)
 {

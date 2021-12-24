@@ -7,6 +7,7 @@
 
 #include <sys/socket.h>
 #include <iostream>
+#include <dirent.h>
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -29,13 +30,10 @@ public:
     void getRequest();
     void sendAnswer(const AllConfigs &);
 	void handleAsFile();
-//	void autoindexHandle();
+	void handleAsDir();
 	void errorPageHandle(const int &);
     int get_fd() const;
     bool areRespondReady() const;
-	Config getConfig() const;
-	void setConfig(const Config &);
-	Socket getSocket() const;
 
 private:
     int fd;
