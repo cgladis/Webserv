@@ -83,7 +83,7 @@ void makeAndSendResponse(int fd, int code, const std::string& response_body) {
 	std::stringstream response;
 	response << "HTTP/1.1" << code << "OK\n"
 			 << "Connection: close"
-			 << "Content-Type: text/html"
+			 << "Content-Type: text/html; charset=utf-8; text/css"
 			 << "Content-Length: " << response_body.length() <<"\n"
 			 << "\n"
 			 << response_body;
@@ -113,6 +113,8 @@ void Session::handleAsDir(const std::string &url) {
 	while ((stDir = readdir(dir)) != nullptr) {
 		if (url == "/")
 			response_body << "<li><a href=\"" << url + stDir->d_name << "\">" << stDir->d_name << "</a></li>\n";
+		else if (std::string(stDir->d_name) == ".")
+			response_body << "<li><a href=\"" << url << "\">" << stDir->d_name << "</a></li>\n";
 		else
 			response_body << "<li><a href=\"" << url + "/" + stDir->d_name << "\">" << stDir->d_name << "</a></li>\n";
 	}
