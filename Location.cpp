@@ -66,3 +66,24 @@ bool Location::isMethodAvailable(const std::string &method) {
 	(void)method;
 	return true;
 }
+
+void Location::setRoot(const std::string &param) {
+    root = param;
+}
+
+void Location::setExec(const std::string &param) {
+    exec = param;
+}
+
+void Location::setAutoindex(const std::string &param) {
+    if (param == "on")
+        autoindex = true;
+    else if (param == "off")
+        autoindex = false;
+    else
+        throw std::runtime_error("Wrong config file");
+}
+
+void Location::setMaxBody(const std::string &param) {
+    max_body = std::atoi(param.c_str());
+}

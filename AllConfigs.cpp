@@ -51,6 +51,14 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
                     parseErrorPage(line, fileLine);
                 else if (word == "location")
                     parseLocation(line, fileLine);
+                else if (word == "root")
+                    parseRoot(line, fileLine);
+                else if (word == "exec")
+                    parseExec(line, fileLine);
+                else if (word == "autoindex")
+                    parseAutoindex(line, fileLine);
+                else if (word == "max_body")
+                    parseMaxBody(line, fileLine);
                 else
                     throw std::runtime_error("Wrong config file in line: "
                                              + std::to_string(fileLine));
@@ -251,4 +259,43 @@ Config AllConfigs::getRightConfig(std::string hostName, const Socket &socket) co
 	return confDefault;
 }
 
+void AllConfigs::parseRoot(std::string &line, int fileLine) {
+    std::string word = nextWord(line);
+    try {
+        (this->end() - 1)->getLastLocation().setRoot(word);
+    } catch (std::exception &ex) {
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
+    }
+}
+
+void AllConfigs::parseExec(std::string &line, int fileLine) {
+    std::string word = nextWord(line);
+    try {
+        (this->end() - 1)->getLastLocation().setExec(word);
+    } catch (std::exception &ex) {
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
+    }
+}
+
+void AllConfigs::parseAutoindex(std::string &line, int fileLine) {
+    std::string word = nextWord(line);
+    try {
+        (this->end() - 1)->getLastLocation().setAutoindex(word);
+    } catch (std::exception &ex) {
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
+    }
+}
+
+void AllConfigs::parseMaxBody(std::string &line, int fileLine) {
+    std::string word = nextWord(line);
+    try {
+        (this->end() - 1)->getLastLocation().setMaxBody(word);
+    } catch (std::exception &ex) {
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
+    }
+}
 

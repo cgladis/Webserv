@@ -32,6 +32,10 @@ private:
     void parseLocation(std::string &line, int fileLine);
     void parseMethods(std::string &line, int fileLine);
     void parseIndex(std::string &line, int fileLine);
+    void parseRoot(std::string &line, int fileLine);
+    void parseExec(std::string &line, int fileLine);
+    void parseAutoindex(std::string &line, int fileLine);
+    void parseMaxBody(std::string &line, int fileLine);
 
 };
 

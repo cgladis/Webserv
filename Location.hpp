@@ -27,6 +27,10 @@ public:
 	bool isAutoIndex() const;
 	const std::string &getIndex() const;
 	bool isMethodAvailable(const std::string &);
+    void setRoot(const std::string &param);
+    void setExec(const std::string &param);
+    void setAutoindex(const std::string &param);
+    void setMaxBody(const std::string &param);
 
 private:
     std::string locationName;
@@ -35,6 +39,7 @@ private:
     std::string root;
     bool autoindex;
     std::string exec;
+    unsigned int max_body;
 };
 
 
