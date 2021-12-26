@@ -36,6 +36,7 @@ private:
     void parseExec(std::string &line, int fileLine);
     void parseAutoindex(std::string &line, int fileLine);
     void parseMaxBody(std::string &line, int fileLine);
+    void parseUploadStore(std::string &line, int fileLine);
 
 };
 

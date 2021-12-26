@@ -31,9 +31,11 @@ public:
     void setExec(const std::string &param);
     void setAutoindex(const std::string &param);
     void setMaxBody(const std::string &param);
+    void setUploadStore(const std::string &param);
     std::string getRoot() const;
     std::string getExec() const;
     unsigned int getMaxBody() const;
+    std::string getUploadStore() const;
 
 private:
     std::string locationName;
@@ -43,6 +45,7 @@ private:
     bool autoindex;
     std::string exec;
     unsigned int max_body;
+    std::string upload_store;
 };
 
 

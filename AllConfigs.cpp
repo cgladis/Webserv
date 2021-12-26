@@ -67,6 +67,8 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
                     parseAutoindex(line, fileLine);
                 else if (word == "max_body")
                     parseMaxBody(line, fileLine);
+                else if (word == "upload_store")
+                    parseUploadStore(line, fileLine);
                 else
                     throw std::runtime_error("Wrong config file in line: "
                                              + std::to_string(fileLine));
@@ -104,8 +106,16 @@ void AllConfigs::parseListen(std::string &line, int fileLine) {
     if (word != ":")
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
-    word = nextWord(line);
-    (this->end() - 1)->setPort(std::stoi(word));
+    try {
+        word = nextWord(line);
+        (this->end() - 1)->setPort(std::stoi(word));
+    }catch (std::exception &ex){
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
+    }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 
 void AllConfigs::parseServerName(std::string &line, int fileLine) {
@@ -117,17 +127,29 @@ void AllConfigs::parseServerName(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 
 void AllConfigs::parseErrorPage(std::string &line, int fileLine) {
-    std::string word = nextWord(line);
+    std::string word;
+    sErrorPage errorPage;
+
     try {
-        (this->end() - 1)->setErrorPage(word);
+        word = nextWord(line);
+        errorPage.errorCode = std::atoi(word.c_str());
+        word = nextWord(line);
+        errorPage.path = word;
+        (this->end() - 1)->setErrorPage(errorPage);
     } catch (std::exception &ex)
     {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 
 void AllConfigs::parseReturn(std::string &line, int fileLine) {
@@ -147,6 +169,9 @@ void AllConfigs::parseReturn(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 
 void AllConfigs::parseLocation(std::string &line, int fileLine) {
@@ -197,6 +222,9 @@ void AllConfigs::parseIndex(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 
 void AllConfigs::checkServerNames() {
@@ -270,6 +298,9 @@ void AllConfigs::parseRoot(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 
 void AllConfigs::parseExec(std::string &line, int fileLine) {
@@ -280,6 +311,9 @@ void AllConfigs::parseExec(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 
 void AllConfigs::parseAutoindex(std::string &line, int fileLine) {
@@ -290,6 +324,9 @@ void AllConfigs::parseAutoindex(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 
 void AllConfigs::parseMaxBody(std::string &line, int fileLine) {
@@ -300,5 +337,21 @@ void AllConfigs::parseMaxBody(std::string &line, int fileLine) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
     }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
+}
+
+void AllConfigs::parseUploadStore(std::string &line, int fileLine) {
+    std::string word = nextWord(line);
+    try {
+        (this->end() - 1)->getLastLocation().setUploadStore(word);
+    } catch (std::exception &ex) {
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
+    }
+    if ((word = nextWord(line)) != ";")
+        throw std::runtime_error("Wrong config file in line: "
+                                 + std::to_string(fileLine));
 }
 

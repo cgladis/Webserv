@@ -19,6 +19,11 @@
 //    std::string exec;
 //};
 
+struct sErrorPage{
+    unsigned int errorCode;
+    std::string path;
+};
+
 class Config {
 
 public:
@@ -30,7 +35,7 @@ public:
     void setIP(const std::string &newIP);
     void setPort(int newPort);
     void setServerName(const std::string &param);
-    void setErrorPage(const std::string &param);
+    void setErrorPage(const sErrorPage &param);
     void setReturn(const std::string &param);
     void addLocation(std::string locationName);
     Location &getLastLocation();
@@ -45,7 +50,7 @@ private:
 	std::string ip;
     int port;
     std::string server_name;
-    std::string error_page;
+    std::vector<sErrorPage> error_page;
     std::string returnField;
 
     std::vector<Location> locations;

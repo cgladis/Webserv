@@ -38,8 +38,8 @@ void Config::setServerName(const std::string &param) {
     server_name = param;
 }
 
-void Config::setErrorPage(const std::string &param) {
-    error_page = param;
+void Config::setErrorPage(const sErrorPage &param) {
+    error_page.push_back(param);
 }
 
 void Config::setReturn(const std::string &param) {

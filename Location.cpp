@@ -62,6 +62,7 @@ const std::string &Location::getIndex() const {
 	return index;
 }
 
+
 bool Location::isMethodAvailable(const std::string &smethod) {
 	method searchingMethod;
 
@@ -99,7 +100,15 @@ void Location::setAutoindex(const std::string &param) {
 }
 
 void Location::setMaxBody(const std::string &param) {
-    max_body = std::atoi(param.c_str());
+    try {
+        max_body = std::atoi(param.c_str());
+    } catch (std::exception()){
+        throw std::runtime_error("Wrong config file");
+    }
+}
+
+void Location::setUploadStore(const std::string &param) {
+    upload_store = param;
 }
 
 std::string Location::getRoot() const {
@@ -113,3 +122,9 @@ std::string Location::getExec() const {
 unsigned int Location::getMaxBody() const {
     return max_body;
 }
+
+std::string Location::getUploadStore() const {
+    return upload_store;
+}
+
+
