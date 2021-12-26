@@ -62,9 +62,23 @@ const std::string &Location::getIndex() const {
 	return index;
 }
 
-bool Location::isMethodAvailable(const std::string &method) {
-	(void)method;
-	return true;
+bool Location::isMethodAvailable(const std::string &smethod) {
+	method searchingMethod;
+
+    if (smethod == "GET")
+        searchingMethod = GET;
+    else if (smethod == "POST")
+        searchingMethod = POST;
+    else if (smethod == "PUT")
+        searchingMethod = PUT;
+    else if (smethod == "DELETE")
+        searchingMethod = DELETE;
+
+    for (size_t i = 0; i < methods.size(); ++i) {
+        if (methods[i] == searchingMethod)
+            return true;
+    }
+	return false;
 }
 
 void Location::setRoot(const std::string &param) {
@@ -86,4 +100,16 @@ void Location::setAutoindex(const std::string &param) {
 
 void Location::setMaxBody(const std::string &param) {
     max_body = std::atoi(param.c_str());
+}
+
+std::string Location::getRoot() const {
+    return root;
+}
+
+std::string Location::getExec() const {
+    return exec;
+}
+
+unsigned int Location::getMaxBody() const {
+    return max_body;
 }

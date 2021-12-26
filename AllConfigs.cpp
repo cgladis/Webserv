@@ -51,6 +51,14 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
                     parseErrorPage(line, fileLine);
                 else if (word == "location")
                     parseLocation(line, fileLine);
+                else
+                    throw std::runtime_error("Wrong config file in line: "
+                                             + std::to_string(fileLine));
+            } else if (level == 2){
+                if (word == "methods")
+                    parseMethods(line, fileLine);
+                else if (word == "index")
+                    parseIndex(line, fileLine);
                 else if (word == "root")
                     parseRoot(line, fileLine);
                 else if (word == "exec")
@@ -62,11 +70,6 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
                 else
                     throw std::runtime_error("Wrong config file in line: "
                                              + std::to_string(fileLine));
-            } else if (level == 2){
-                if (word == "methods")
-                    parseMethods(line, fileLine);
-                if (word == "index")
-                    parseIndex(line, fileLine);
             } else
                 throw std::runtime_error("Wrong config file in line: "
                                          + std::to_string(fileLine));

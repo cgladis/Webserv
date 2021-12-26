@@ -26,11 +26,14 @@ public:
     void addIndex(std::string index);
 	bool isAutoIndex() const;
 	const std::string &getIndex() const;
-	bool isMethodAvailable(const std::string &);
+	bool isMethodAvailable(const std::string &smethod);
     void setRoot(const std::string &param);
     void setExec(const std::string &param);
     void setAutoindex(const std::string &param);
     void setMaxBody(const std::string &param);
+    std::string getRoot() const;
+    std::string getExec() const;
+    unsigned int getMaxBody() const;
 
 private:
     std::string locationName;

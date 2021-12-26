@@ -63,3 +63,7 @@ std::string Config::getServerName() const {
 std::string Config::getIP() const {
 	return ip;
 }
+
+std::vector<Location>::iterator Config::getLocation(int index) {
+    return locations.begin() + index;
+}
