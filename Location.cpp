@@ -24,6 +24,7 @@ Location &Location::operator=(const Location &other) {
     this->root = other.root;
     this->methods = other.methods;
     this->autoindex = other.autoindex;
+	this->exec = other.exec;
 
     return *this;
 }
@@ -62,7 +63,6 @@ const std::string &Location::getIndex() const {
 	return index;
 }
 
-
 bool Location::isMethodAvailable(const std::string &smethod) {
 	method searchingMethod;
 
@@ -70,8 +70,6 @@ bool Location::isMethodAvailable(const std::string &smethod) {
         searchingMethod = GET;
     else if (smethod == "POST")
         searchingMethod = POST;
-    else if (smethod == "PUT")
-        searchingMethod = PUT;
     else if (smethod == "DELETE")
         searchingMethod = DELETE;
 

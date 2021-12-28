@@ -9,7 +9,7 @@
 #include <iostream>
 
 enum method{
-	GET, POST, PUT, DELETE
+	GET, POST, DELETE
 };
 
 class Location {

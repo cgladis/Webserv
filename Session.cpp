@@ -128,6 +128,7 @@ void Session::handleAsDir(const std::string &url) {
 }
 
 void Session::handleAsFile() {
+	std::cout << path << std::endl;
 	if (access(path.c_str(), R_OK) == 1)
 		errorPageHandle(403);
 	std::ifstream fin(path);
@@ -144,6 +145,17 @@ void Session::handleAsFile() {
 	makeAndSendResponse(fd, 200, response_body.str());
 }
 
+void Session::handleAsCGI() {
+
+	// переменные класса
+	// fd - фд сессии
+	// path - путь к скрипту (.py)
+	// header - мапа с данными из хедера запроса, чтобы получить данные, используй ее вот так header.at("Host:")
+	// посмотреть содержимое мапы - либо через дебагер, либо разкоментить блок в SendAnswer
+	// config - конфиг, с которым мы работаем на время текущего соединения
+	// location - соответственно location, с которым мы работаем
+}
+
 void Session::sendAnswer(const AllConfigs &configs) {
 //	std::cout << std::endl << "MAP'S CONTENT";
 //	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
@@ -155,21 +167,25 @@ void Session::sendAnswer(const AllConfigs &configs) {
 	Location location;
 	if (!config.getLocations().empty())
 		location = getMyLocation(config.getLocations(), url);
+	if (!location.isMethodAvailable(header.at("Method:")))
+		errorPageHandle(405);
 	path = formPath(location, url);
-
 	struct stat st = {};
 	stat(path.c_str(), &st);
 	if (S_ISREG(st.st_mode))
 		handleAsFile();
 	else if (S_ISDIR(st.st_mode)) {
-		if (!location.getIndex().empty()) {
+		if (!location.getExec().empty() && location.getExec().substr(location.getExec().size() - 3) == ".py") {
+			path.append(location.getExec());
+			handleAsCGI();
+		} else if (!location.getIndex().empty()) {
 			path.append(location.getIndex());
-				handleAsFile();
+			handleAsFile();
 		} else if (location.isAutoIndex()) {
 			handleAsDir(url);
 		} else
 			return;
-		//no index, no autoindex and it is direcotry! error
+		//no index, no autoindex and it is directory! error
 	}
 	else
 		errorPageHandle(404);
@@ -209,10 +225,9 @@ std::vector<std::string> split(const std::string& s, char delimiter)
 
 std::string formPath(const Location &location, const std::string &url) {
 	std::string path;
-	path = "./www"; // location.getRoot();
-	if ((url == location.getLocationName() || url == location.getLocationName() + "/") && !location.getIndex().empty()) {
-		path.append("/").append(location.getIndex());
-	}
+	path = location.getRoot();
+	if ((url == location.getLocationName() || url == location.getLocationName() + "/"))
+		path.append("/");
 	else if (url.size() > location.getLocationName().size()) {
 		if (location.getLocationName() == "/")
 			path.append("/");

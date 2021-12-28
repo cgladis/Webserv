@@ -34,6 +34,7 @@ public:
 	void errorPageHandle(const int &);
     int get_fd() const;
     bool areRespondReady() const;
+	void handleAsCGI();
 
 private:
     int fd;
