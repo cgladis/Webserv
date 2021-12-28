@@ -50,10 +50,10 @@ int Server::mySelect() {
 	// usleep for clean and copy fds properly
 	FD_ZERO(&readFds);
 	FD_ZERO(&writeFds);
-	usleep(10000);
+	usleep(1000);
 	readFds = masReadFds;
 	writeFds = masWriteFds;
-	usleep(10000);
+	usleep(1000);
     return select(getMaxFd() + 1, &readFds, &writeFds, nullptr, nullptr);
 }
 

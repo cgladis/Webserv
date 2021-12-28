@@ -37,7 +37,6 @@ public:
 
 private:
     int fd;
-	std::string ref;
     bool respondReady;
     std::string request;
 	std::string path;
