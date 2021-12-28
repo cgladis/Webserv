@@ -63,7 +63,7 @@ const std::string &Location::getIndex() const {
 	return index;
 }
 
-bool Location::isMethodAvailable(const std::string &smethod) {
+bool Location::isMethodAvailable(const std::string &smethod) const {
 	method searchingMethod;
 
     if (smethod == "GET")

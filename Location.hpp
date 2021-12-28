@@ -26,7 +26,7 @@ public:
     void addIndex(std::string index);
 	bool isAutoIndex() const;
 	const std::string &getIndex() const;
-	bool isMethodAvailable(const std::string &smethod);
+	bool isMethodAvailable(const std::string &smethod) const;
     void setRoot(const std::string &param);
     void setExec(const std::string &param);
     void setAutoindex(const std::string &param);

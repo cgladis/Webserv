@@ -16,8 +16,7 @@ void Session::parseRequest() {
 	std::stringstream ss(request);
 	std::string curLine;
 	std::string curWord;
-	std::string localTheme;
-	size_t startPos;
+	std::string value;
 
 	std::getline(ss, curLine);
 	std::stringstream localSs(curLine);
@@ -27,12 +26,20 @@ void Session::parseRequest() {
 		header.insert(std::make_pair(firstLineHeader[i], curWord));
 	}
 
+	size_t startPos;
+	int count = 0;
 	while (std::getline(ss, curLine)) {
-		if (curLine.empty())
-			break;
+		if (curLine == "\r") {
+			count++;
+			continue;
+		}
+		if (count == 2) {
+			fileText.append(curLine + "\n");
+			continue;
+		}
 		startPos = curLine.find(':');
-		localTheme = curLine.substr(startPos + 2);
-		header.insert(std::make_pair(curLine.substr(0, startPos + 1), localTheme));
+		value = curLine.substr(startPos + 2);
+		header.insert(std::make_pair(curLine.substr(0, startPos + 1), value));
 	}
 }
 
@@ -77,13 +84,14 @@ Location getMyLocation(const std::vector<Location> &locations, const std::string
 void Session::errorPageHandle(const int &code) {
 	(void)code;
 	std::ifstream erPage;
+	exit(-1);
 }
 
 void makeAndSendResponse(int fd, int code, const std::string& response_body) {
 	std::stringstream response;
 	response << "HTTP/1.1" << code << "OK\n"
 			 << "Connection: close"
-			 << "Content-Type: text/html; charset=utf-8; text/css"
+			 << "Content-Type: text/html; image/gif"
 			 << "Content-Length: " << response_body.length() <<"\n"
 			 << "\n"
 			 << response_body;
@@ -128,7 +136,6 @@ void Session::handleAsDir(const std::string &url) {
 }
 
 void Session::handleAsFile() {
-	std::cout << path << std::endl;
 	if (access(path.c_str(), R_OK) == 1)
 		errorPageHandle(403);
 	std::ifstream fin(path);
@@ -172,6 +179,10 @@ void Session::sendAnswer(const AllConfigs &configs) {
 	path = formPath(location, url);
 	struct stat st = {};
 	stat(path.c_str(), &st);
+
+	if (header.at("Method:") == "POST")
+		handlePostRequest(location);
+
 	if (S_ISREG(st.st_mode))
 		handleAsFile();
 	else if (S_ISDIR(st.st_mode)) {
@@ -206,6 +217,33 @@ Session::~Session() {
 Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
 	return *this;
+}
+
+void Session::handlePostRequest(const Location &location) {
+	if (!location.isMethodAvailable(header.at("Method:")))
+		errorPageHandle(405);
+	size_t pos;
+	size_t start;
+	size_t end;
+	std::map<std::string, std::string>::iterator it;
+	if ((it = header.find("Content-Disposition:")) != header.end()) {
+		// extracting filename
+		if ((pos = it->second.find("filename=")) != std::string::npos)
+			uploadedFilename = it->second.substr(pos + 10);
+		start = uploadedFilename.find_first_not_of('\"');
+		end = uploadedFilename.find_last_not_of("\"\r");
+		uploadedFilename = uploadedFilename.substr(start, end + 1);
+
+		// defining, where file should be saved (if user defined)
+		if (!location.getUploadStore().empty())
+			uploadedFilename = location.getUploadStore() + "/" + uploadedFilename;
+
+		// creating and writing to a file
+		std::fstream fileToUpl(uploadedFilename, std::ios::out);
+		if (fileToUpl.is_open())
+			fileToUpl << fileText;
+		fileToUpl.close();
+	}
 }
 
 std::vector<std::string> split(const std::string& s, char delimiter)

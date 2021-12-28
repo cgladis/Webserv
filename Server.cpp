@@ -100,7 +100,7 @@ void Server::connect(Socket &currentSocket) {
 		FD_SET(fd, &masReadFds);
 		FD_SET(fd, &masWriteFds);
 		// give some time to set fds in fd_sets
-		usleep(20000);
+		usleep(5000);
         sessions.push_back(Session(fd, currentSocket));
 	}
 	else
@@ -110,7 +110,7 @@ void Server::connect(Socket &currentSocket) {
 void Server::finishSession(size_t i) {
 	FD_CLR(sessions[i].get_fd(), &masReadFds);
 	FD_CLR(sessions[i].get_fd(), &masWriteFds);
-	usleep(10000);
+	usleep(5000);
 	close(sessions[i].get_fd());
 //	std::cout << "SESSION CLOSED. FD: " << sessions[i].get_fd() << std::endl;
 	sessions.erase(sessions.begin() + i);

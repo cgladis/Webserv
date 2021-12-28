@@ -35,6 +35,7 @@ public:
     int get_fd() const;
     bool areRespondReady() const;
 	void handleAsCGI();
+	void handlePostRequest(const Location &);
 
 private:
     int fd;
@@ -44,6 +45,8 @@ private:
 	Config config;
 	Socket sesSocket;
 	std::map<std::string, std::string> header;
+	std::string uploadedFilename;
+	std::string fileText;
 };
 
 
