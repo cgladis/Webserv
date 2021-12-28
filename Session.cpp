@@ -177,12 +177,15 @@ void Session::sendAnswer(const AllConfigs &configs) {
 	if (!location.isMethodAvailable(header.at("Method:")))
 		errorPageHandle(405);
 	path = formPath(location, url);
+
+	//for checking is path a directory or a file
 	struct stat st = {};
 	stat(path.c_str(), &st);
 
 	if (header.at("Method:") == "POST")
 		handlePostRequest(location);
 
+	// checking the file is a dir, or a file
 	if (S_ISREG(st.st_mode))
 		handleAsFile();
 	else if (S_ISDIR(st.st_mode)) {
@@ -222,6 +225,8 @@ Session &Session::operator=(const Session &oth) {
 void Session::handlePostRequest(const Location &location) {
 	if (!location.isMethodAvailable(header.at("Method:")))
 		errorPageHandle(405);
+	else if ((unsigned int)std::stoi(header.at("Content-Length:")) > location.getMaxBody())
+		errorPageHandle(413);
 	size_t pos;
 	size_t start;
 	size_t end;

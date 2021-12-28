@@ -25,6 +25,8 @@ Location &Location::operator=(const Location &other) {
     this->methods = other.methods;
     this->autoindex = other.autoindex;
 	this->exec = other.exec;
+	this->max_body = other.max_body;
+	this->upload_store = other.upload_store;
 
     return *this;
 }
