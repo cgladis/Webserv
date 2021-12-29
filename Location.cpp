@@ -4,7 +4,7 @@
 
 #include "Location.hpp"
 
-Location::Location(): autoindex(true) {
+Location::Location(): autoindex(false) {
 }
 
 Location::Location(std::string locationName): locationName(locationName), autoindex(true) {
@@ -12,9 +12,7 @@ Location::Location(std::string locationName): locationName(locationName), autoin
 }
 
 Location::Location(const Location &other) {
-
     *this = other;
-
 }
 
 Location &Location::operator=(const Location &other) {

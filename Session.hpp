@@ -17,7 +17,7 @@
 #include "Socket.hpp"
 #include <map>
 #include <sys/stat.h>
-
+#include <cstdio>
 #define BUFF_SIZE 100
 
 class Session {
@@ -36,6 +36,7 @@ public:
     bool areRespondReady() const;
 	void handleAsCGI();
 	void handlePostRequest(const Location &);
+	void handleDeleteRequest();
 
 private:
     int fd;

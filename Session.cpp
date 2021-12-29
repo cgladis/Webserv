@@ -178,13 +178,15 @@ void Session::sendAnswer(const AllConfigs &configs) {
 		errorPageHandle(405);
 	path = formPath(location, url);
 
-	//for checking is path a directory or a file
-	struct stat st = {};
-	stat(path.c_str(), &st);
 
 	if (header.at("Method:") == "POST")
 		handlePostRequest(location);
+	else if (header.at("Method:") == "DELETE")
+		handleDeleteRequest();
 
+	//for checking is path a directory or a file
+	struct stat st = {};
+	stat(path.c_str(), &st);
 	// checking the file is a dir, or a file
 	if (S_ISREG(st.st_mode))
 		handleAsFile();
@@ -223,32 +225,37 @@ Session &Session::operator=(const Session &oth) {
 }
 
 void Session::handlePostRequest(const Location &location) {
-	if (!location.isMethodAvailable(header.at("Method:")))
-		errorPageHandle(405);
-	else if ((unsigned int)std::stoi(header.at("Content-Length:")) > location.getMaxBody())
+	if ((unsigned int)std::stoi(header.at("Content-Length:")) > location.getMaxBody())
 		errorPageHandle(413);
 	size_t pos;
-	size_t start;
-	size_t end;
+
 	std::map<std::string, std::string>::iterator it;
 	if ((it = header.find("Content-Disposition:")) != header.end()) {
 		// extracting filename
 		if ((pos = it->second.find("filename=")) != std::string::npos)
 			uploadedFilename = it->second.substr(pos + 10);
-		start = uploadedFilename.find_first_not_of('\"');
-		end = uploadedFilename.find_last_not_of("\"\r");
+		size_t start = uploadedFilename.find_first_not_of('\"');
+		size_t end = uploadedFilename.find_last_not_of("\"\r");
 		uploadedFilename = uploadedFilename.substr(start, end + 1);
 
 		// defining, where file should be saved (if user defined)
-		if (!location.getUploadStore().empty())
+		if (!location.getUploadStore().empty() && location.getUploadStore() != "/")
 			uploadedFilename = location.getUploadStore() + "/" + uploadedFilename;
 
 		// creating and writing to a file
-		std::fstream fileToUpl(uploadedFilename, std::ios::out);
+		std::ofstream fileToUpl(uploadedFilename);
 		if (fileToUpl.is_open())
 			fileToUpl << fileText;
+		else
+			//filepath not found
 		fileToUpl.close();
 	}
+}
+
+void Session::handleDeleteRequest() {
+	std::string fileToDelete = header.at("Path:").substr(1);
+	std::remove(fileToDelete.c_str());
+	path = "www/index.html";
 }
 
 std::vector<std::string> split(const std::string& s, char delimiter)
