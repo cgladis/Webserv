@@ -8,6 +8,7 @@
 #include "Socket.hpp"
 #include "Session.hpp"
 #include "AllConfigs.hpp"
+#include "FDSet.hpp"
 #include <iostream>
 #include <vector>
 
@@ -15,19 +16,18 @@ class Server {
 public:
     Server();
 
-	int getMaxFd();
     void addServers(const AllConfigs&);
     void run(const AllConfigs &);
     void connect(Socket &currentSocket);
 	void finishSession(size_t i);
 
 private:
-    int mySelect();
     std::vector<Socket> listeningSockets;
     int qlen;
     bool exit;
     std::vector<Session> sessions;
-	fd_set writeFds, readFds, masWriteFds, masReadFds;
+//	fd_set writeFds, readFds, masWriteFds, masReadFds;
+    FDSet fds;
 };
 
 

@@ -43,19 +43,30 @@ void Session::parseRequest() {
 	}
 }
 
+//считывает запрос порциями по BUFF_SIZE
+//если запрос считан до конца, ставит флаг respondReady
 void Session::getRequest() {
 	char buff[BUFF_SIZE + 1];
-	unsigned long length;
+	ssize_t length = 0;
 
-	length = recv(fd, buff, BUFF_SIZE, 0);
+	length = recv(fd, &buff, BUFF_SIZE, 0);
+    std::cout << "-------------------------------" << std::endl;
+    std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
+    std::cout << buff << std::endl;
+    std::cout << "-------------------------------" << std::endl;
 	if (length == 0)
 		throw std::runtime_error("connection is closed");
-	if (length < 0 )
-		throw std::runtime_error("receiving info error");
+	if (length < 0 ){
+        return;
+		throw std::runtime_error("receiving info error");}
 	else if (length == BUFF_SIZE || (length > 0 && length < BUFF_SIZE)) {
+//        if (length == BUFF_SIZE and buff[length - 1] == '\0')
+//            respondReady = true;
 		buff[length] = 0;
 		request.append(buff);
 		if ((respondReady = (length > 0 && length < BUFF_SIZE))) {
+            std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+            std::cout << C_RED << request << C_WHITE << std::endl;
 			parseRequest();
 		}
 	}
@@ -89,12 +100,14 @@ void Session::errorPageHandle(const int &code) {
 
 void makeAndSendResponse(int fd, int code, const std::string& response_body) {
 	std::stringstream response;
-	response << "HTTP/1.1" << code << "OK\n"
-			 << "Connection: close"
-			 << "Content-Type: text/html; image/gif"
+	response << "HTTP/1.1 " << code << " OK\n"
+			 << "Connection: close\n"
+			 << "Content-Type: text/html; image/gif\n"
 			 << "Content-Length: " << response_body.length() <<"\n"
 			 << "\n"
 			 << response_body;
+    std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+    std::cout << C_BLUE << response.str() << C_WHITE << std::endl;
 	int length = (int)send(fd, response.str().c_str(), response.str().length(), 0);
 	if (length < 0)
 		throw std::runtime_error("error sending data");
@@ -152,6 +165,7 @@ void Session::handleAsFile() {
 	makeAndSendResponse(fd, 200, response_body.str());
 }
 
+//делает body ответа и отправяет на сокет
 void Session::handleAsCGI() {
 
 	// переменные класса
@@ -161,8 +175,24 @@ void Session::handleAsCGI() {
 	// посмотреть содержимое мапы - либо через дебагер, либо разкоментить блок в SendAnswer
 	// config - конфиг, с которым мы работаем на время текущего соединения
 	// location - соответственно location, с которым мы работаем
+
+    std::stringstream response_body;
+
+    std::ifstream fin(path);
+    if (!fin.is_open())
+        throw std::runtime_error("file wasn't opened");
+
+    std::string line;
+    while (std::getline(fin, line)) {
+        response_body << line;
+        if (!fin.eof())
+            response_body << "\n";
+    }
+
+    makeAndSendResponse(fd, 200, response_body.str());
 }
 
+//формирует и отправляет ответ
 void Session::sendAnswer(const AllConfigs &configs) {
 //	std::cout << std::endl << "MAP'S CONTENT";
 //	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
@@ -221,6 +251,7 @@ Session::~Session() {
 
 Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
+    this->respondReady = oth.respondReady;
 	return *this;
 }
 

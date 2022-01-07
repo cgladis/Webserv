@@ -4,19 +4,16 @@
 
 #include "Server.hpp"
 
-int Server::getMaxFd() {
-	int max;
-	for (unsigned int i = 0; i < listeningSockets.size(); ++i)
-		max = max < listeningSockets[i].get_fd() ? listeningSockets[i].get_fd() : max;
-	for (unsigned int i = 0; i < sessions.size(); ++i)
-		max = sessions[i].get_fd() > max ? sessions[i].get_fd() : max;
-	return max;
+//инициализация сервера
+//qlen - количество одновременных соединений
+Server::Server(): qlen(5), exit(false) {
+
 }
 
 void handleSelectError(int resSelect) {
 	if (resSelect < 0) {
 		if (errno != EINTR)
-			std::cout << "STATUS: ERROR " << std::endl;
+			std::cout << "STATUS: ERROR " << strerror(errno) << std::endl;
 		else
 			std::cout << "STATUS: NO SIGNAL " << std::endl;
 	}
@@ -24,12 +21,9 @@ void handleSelectError(int resSelect) {
 		std::cout << "STATUS: TIME OUT " << std::endl;
 }
 
-Server::Server(): qlen(5), exit(false) {
-
-}
-
+//открывает сокеты для каждого уникального Ip Port в config-файле.
+//создаем столько сокетов, сколько уникальных Ip Port
 void Server::addServers(const AllConfigs &configs) {
-	// создаем столько сокетов, сколько уникальных Ip Port
 	for (size_t i = 0; i < configs.getUniqIpPortVectorSize(); ++i) {
 		Socket sock = Socket();
 
@@ -39,31 +33,23 @@ void Server::addServers(const AllConfigs &configs) {
 		//make socket ready to work
 		sock.bind(ip, port);
 		sock.listen(qlen);
-		FD_SET(sock.get_fd(), &masReadFds);
+        fds.addReadFD(sock.get_fd());
 		listeningSockets.push_back(sock);
 
 		std::cout << "Start server http://" << configs.getIpPort(i) << "/" << std::endl;
 	}
 }
 
-int Server::mySelect() {
-	// usleep for clean and copy fds properly
-	FD_ZERO(&readFds);
-	FD_ZERO(&writeFds);
-	usleep(1000);
-	readFds = masReadFds;
-	writeFds = masWriteFds;
-	usleep(1000);
-    return select(getMaxFd() + 1, &readFds, &writeFds, nullptr, nullptr);
-}
-
+//Запускает сервер.
+//Открывает бесконечный цикл опроса наших сокетов и работу с ними
 void Server::run(const AllConfigs &configs) {
     int resSelect;
 
     while (!exit)
     {
-        resSelect = mySelect();
-//		std::cout << "SELECT : OK = " << resSelect << std::endl;
+        std::cout << fds << std::endl;
+        resSelect = fds.select();
+        std::cout << fds << std::endl;
 
 		if (resSelect <= 0) {
 			handleSelectError(resSelect);
@@ -71,16 +57,16 @@ void Server::run(const AllConfigs &configs) {
 		}
 
         for (size_t i = 0; i < listeningSockets.size(); ++i)
-            if (FD_ISSET(listeningSockets[i].get_fd(), &readFds)) {
+            if (fds.isSetReadFD(listeningSockets[i].get_fd())){
                 connect(listeningSockets[i]); // connect event handling
             }
 
         for (size_t i = 0; i < sessions.size(); ++i) {
-			if (FD_ISSET(sessions[i].get_fd(), &readFds)){
+            if (fds.isSetReadFD(sessions[i].get_fd())){
 //				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
 				sessions[i].getRequest();
 			}
-			if (FD_ISSET(sessions[i].get_fd(), &writeFds) && sessions[i].areRespondReady()) {
+            if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
 //				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
 				sessions[i].sendAnswer(configs);
 				finishSession(i);
@@ -89,6 +75,9 @@ void Server::run(const AllConfigs &configs) {
     }
 }
 
+//устанавливает соединение с сокетом
+//добавляет fd сокета в список опрашиваемых
+//открывает новую сессию для сокета
 void Server::connect(Socket &currentSocket) {
 
     //try get request
@@ -97,10 +86,9 @@ void Server::connect(Socket &currentSocket) {
     socklen_t len;
     fd = accept(currentSocket.get_fd(), &inputSocket, &len);
     if (fd > 0) {
-		FD_SET(fd, &masReadFds);
-		FD_SET(fd, &masWriteFds);
+        fds.addFD(fd);
 		// give some time to set fds in fd_sets
-		usleep(5000);
+//		usleep(5000);
         sessions.push_back(Session(fd, currentSocket));
 	}
 	else
@@ -108,9 +96,10 @@ void Server::connect(Socket &currentSocket) {
 }
 
 void Server::finishSession(size_t i) {
-	FD_CLR(sessions[i].get_fd(), &masReadFds);
-	FD_CLR(sessions[i].get_fd(), &masWriteFds);
-	usleep(5000);
+//    std::cout << "FD " << sessions[i].get_fd() << " CLOSED" <<std::endl;
+    fds.deleteFD(sessions[i].get_fd());
+    std::cout << "FD " << sessions[i].get_fd() << " CLOSED" <<std::endl;
+//	usleep(5000);
 	close(sessions[i].get_fd());
 //	std::cout << "SESSION CLOSED. FD: " << sessions[i].get_fd() << std::endl;
 	sessions.erase(sessions.begin() + i);

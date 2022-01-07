@@ -40,8 +40,8 @@ void Socket::bind(const std::string &ip, int port) {
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
     //nonblock mode
-//    int flags = fcntl(fd, F_GETFL);
-//    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    int flags = fcntl(fd, F_GETFL);
+    fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
 	//bind port
     if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1) {

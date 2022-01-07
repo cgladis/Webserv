@@ -19,6 +19,10 @@
 #include <sys/stat.h>
 #include <cstdio>
 #define BUFF_SIZE 100
+#define C_RED "\033[31m"
+#define C_WHITE "\033[0m"
+#define C_BLUE "\033[34m"
+#define C_YELLOW "\033[33m"
 
 class Session {
 public:
