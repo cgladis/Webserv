@@ -54,24 +54,31 @@ void Session::getRequest() {
     std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
     std::cout << buff << std::endl;
     std::cout << "-------------------------------" << std::endl;
-	if (length == 0)
+	if (length == 0){
 		throw std::runtime_error("connection is closed");
-	if (length < 0 ){
+    }
+	else if (length < 0 ){
+        // запрос еще не поступил
         return;
-		throw std::runtime_error("receiving info error");}
-	else if (length == BUFF_SIZE || (length > 0 && length < BUFF_SIZE)) {
-//        if (length == BUFF_SIZE and buff[length - 1] == '\0')
-//            respondReady = true;
-		buff[length] = 0;
-		request.append(buff);
-		if ((respondReady = (length > 0 && length < BUFF_SIZE))) {
+		throw std::runtime_error("receiving info error");
+    }
+    else if (length <= BUFF_SIZE) {
+
+        buff[length] = 0;
+        request.append(buff);
+
+        char tmp[1];
+        ssize_t check_eof = recv(fd, &tmp, 1, MSG_PEEK);
+        if (check_eof < 0) {
+            respondReady = true;
             std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
             std::cout << C_RED << request << C_WHITE << std::endl;
-			parseRequest();
-		}
-	}
-	else
-		throw std::runtime_error("unknown error");
+            parseRequest();
+        }
+    }
+    else {
+        throw std::runtime_error("unknown error");
+    }
 }
 
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
