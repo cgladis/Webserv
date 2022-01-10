@@ -9,6 +9,7 @@ std::string formPath(const Location &location, const std::string &url);
 
 Session::Session(int fd, const Socket& sock): fd(fd), sesSocket(sock) {
 //    std::cout << "New session: " << fd << std::endl;
+    request = "";
     respondReady = false;
 }
 
@@ -50,10 +51,12 @@ void Session::getRequest() {
 	ssize_t length = 0;
 
 	length = recv(fd, &buff, BUFF_SIZE, 0);
+
     std::cout << "-------------------------------" << std::endl;
     std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
     std::cout << buff << std::endl;
     std::cout << "-------------------------------" << std::endl;
+
 	if (length == 0){
 		throw std::runtime_error("connection is closed");
     }
@@ -259,6 +262,7 @@ Session::~Session() {
 Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
     this->respondReady = oth.respondReady;
+    this->request = oth.request;
 	return *this;
 }
 
