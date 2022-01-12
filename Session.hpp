@@ -15,6 +15,7 @@
 #include <string>
 #include "AllConfigs.hpp"
 #include "Socket.hpp"
+#include "ErrorException.hpp"
 #include <map>
 #include <sys/stat.h>
 #include <cstdio>

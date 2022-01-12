@@ -44,7 +44,6 @@ void Server::addServers(const AllConfigs &configs) {
 //Открывает бесконечный цикл опроса наших сокетов и работу с ними
 void Server::run(const AllConfigs &configs) {
     int resSelect;
-
     while (!exit)
     {
         resSelect = fds.select();
@@ -55,11 +54,11 @@ void Server::run(const AllConfigs &configs) {
 			continue;
 		}
 
-        for (size_t i = 0; i < listeningSockets.size(); ++i)
-            if (fds.isSetReadFD(listeningSockets[i].get_fd())){
-                connect(listeningSockets[i]); // connect event handling
-            }
-
+        for (size_t i = 0; i < listeningSockets.size(); ++i) {
+			if (fds.isSetReadFD(listeningSockets[i].get_fd())) {
+				connect(listeningSockets[i]); // connect event handling
+			}
+		}
         for (size_t i = 0; i < sessions.size(); ++i) {
             if (fds.isSetReadFD(sessions[i].get_fd())){
 //				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
