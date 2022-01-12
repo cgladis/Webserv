@@ -47,7 +47,6 @@ void Server::run(const AllConfigs &configs) {
 
     while (!exit)
     {
-        std::cout << fds << std::endl;
         resSelect = fds.select();
         std::cout << fds << std::endl;
 

@@ -12,12 +12,15 @@ int main(){
 	configs.checkServerNames();
 
 	Server server;
-    try {
-		server.addServers(configs);
-        server.run(configs);
+	server.addServers(configs);
+	while (true) {
+		try {
+			server.run(configs);
+		}
+		catch (std::runtime_error &ex) {
+			std::cout << "ERROR - " << ex.what() << std::endl;
+			continue;
+		}
 	}
-    catch (std::runtime_error &ex) {
-        std::cout << "ERROR - " << ex.what() << std::endl;
-    }
     return 0;
 }

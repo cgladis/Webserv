@@ -49,7 +49,7 @@ void Session::parseRequest() {
 //если запрос считан до конца, ставит флаг respondReady
 void Session::getRequest() {
 	char buff[BUFF_SIZE + 1];
-	ssize_t length = 0;
+	ssize_t length;
 
 	length = recv(fd, &buff, BUFF_SIZE, 0);
 
@@ -58,12 +58,8 @@ void Session::getRequest() {
     std::cout << buff << std::endl;
     std::cout << "-------------------------------" << std::endl;
 
-	if (length == 0){
-		throw std::runtime_error("connection is closed");
-    }
-	else if (length < 0 ){
+	if (length < 0 ) {
         // запрос еще не поступил
-        return;
 		throw std::runtime_error("receiving info error");
     }
     else if (length <= BUFF_SIZE) {
