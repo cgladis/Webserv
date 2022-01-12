@@ -6,9 +6,11 @@
 #include "AllConfigs.hpp"
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
+void makeAndSendResponse(int fd, int code, const std::string& response_body, const std::string &status = "OK");
 
 Session::Session(int fd, const Socket& sock): fd(fd), sesSocket(sock) {
 //    std::cout << "New session: " << fd << std::endl;
+    request = "";
     respondReady = false;
 }
 
@@ -50,10 +52,12 @@ void Session::getRequest() {
 	ssize_t length = 0;
 
 	length = recv(fd, &buff, BUFF_SIZE, 0);
+
     std::cout << "-------------------------------" << std::endl;
     std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
     std::cout << buff << std::endl;
     std::cout << "-------------------------------" << std::endl;
+
 	if (length == 0){
 		throw std::runtime_error("connection is closed");
     }
@@ -100,16 +104,31 @@ Location getMyLocation(const std::vector<Location> &locations, const std::string
 }
 
 void Session::errorPageHandle(const int &code) {
-	(void)code;
-	std::ifstream erPage;
-	exit(-1);
+	std::stringstream ss;
+	std::string status = code == 200 ? "OK" : code == 404 ? "Not Found" : code == 403 ? "Forbidden" : code == 405 ?
+			"Method Not Allowed" : code == 413 ? "Request Entity Too Large": "";
+	ss << "<!DOCTYPE html>\n"
+		  "<html lang=\"EN\">\n"
+		  "<head>\n"
+		  "\t<link rel=\"shortcut icon\" href=\"../images/favicon.ico\">\n"
+		  "\t<meta charset=\"UTF-8\">\n"
+		  "\t<title>Error Page</title>\n"
+		  "\n"
+		  "</head>\n"
+		  "<body>\n"
+		  "\t<h1>" << code << "</h1>\n"
+		  "\t<h1>" << status << "</h1>\n"
+		  "</body>\n"
+		  "</html>";
+	makeAndSendResponse(fd, code, ss.str(), status);
 }
 
-void makeAndSendResponse(int fd, int code, const std::string& response_body) {
+void makeAndSendResponse(int fd, int code, const std::string& response_body, const std::string &status) {
 	std::stringstream response;
-	response << "HTTP/1.1 " << code << " OK\n"
-			 << "Connection: close\n"
-			 << "Content-Type: text/html; image/gif\n"
+
+	response << "HTTP/1.1 " << code << " " << status << "\n"
+			 << "Connection: close"
+			 << "Content-Type: text/html; image/gif"
 			 << "Content-Length: " << response_body.length() <<"\n"
 			 << "\n"
 			 << response_body;
@@ -174,15 +193,6 @@ void Session::handleAsFile() {
 
 //делает body ответа и отправяет на сокет
 void Session::handleAsCGI() {
-
-	// переменные класса
-	// fd - фд сессии
-	// path - путь к скрипту (.py)
-	// header - мапа с данными из хедера запроса, чтобы получить данные, используй ее вот так header.at("Host:")
-	// посмотреть содержимое мапы - либо через дебагер, либо разкоментить блок в SendAnswer
-	// config - конфиг, с которым мы работаем на время текущего соединения
-	// location - соответственно location, с которым мы работаем
-
     std::stringstream response_body;
 
     std::ifstream fin(path);
@@ -259,6 +269,7 @@ Session::~Session() {
 Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
     this->respondReady = oth.respondReady;
+    this->request = oth.request;
 	return *this;
 }
 
