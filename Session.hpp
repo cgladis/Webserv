@@ -31,17 +31,19 @@ public:
 	Session &operator=(const Session& oth);
     ~Session();
 
+	void makeAndSendResponse(int fd, const std::string& response_body, unsigned int code = 200, const std::string
+	&status = "OK");
 	void parseRequest();
     void getRequest();
     void sendAnswer(const AllConfigs &);
-	void handleAsFile();
 	void handleAsDir(const std::string &);
-	void errorPageHandle(const int &);
+	void errorPageHandle(unsigned int &);
     int get_fd() const;
     bool areRespondReady() const;
 	void handleAsCGI();
 	void handlePostRequest(const Location &);
 	void handleDeleteRequest();
+	std::string openAndReadTheFile(const std::string &);
 
 private:
     int fd;

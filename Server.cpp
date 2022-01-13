@@ -85,8 +85,6 @@ void Server::connect(Socket &currentSocket) {
     fd = accept(currentSocket.get_fd(), &inputSocket, &len);
     if (fd > 0) {
         fds.addFD(fd);
-		// give some time to set fds in fd_sets
-//		usleep(5000);
         sessions.push_back(Session(fd, currentSocket));
 	}
 	else

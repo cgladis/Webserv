@@ -67,3 +67,17 @@ std::string Config::getIP() const {
 std::vector<Location>::iterator Config::getLocation(int index) {
     return locations.begin() + index;
 }
+
+unsigned int Config::getCode(int i) const {
+	return error_page[i].errorCode;
+}
+
+std::string Config::getPath(int i) const {
+	return error_page[i].path;
+}
+
+unsigned long Config::getErrorPagesVectorSize() const {
+	return error_page.size();
+}
+
+

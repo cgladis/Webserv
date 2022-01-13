@@ -7,7 +7,7 @@ public:
 	ErrorException();
 	ErrorException(int code);
 	~ErrorException() throw();
-	int error_code;
+	unsigned int error_code;
 
 private:
 

@@ -6,7 +6,7 @@
 #include "AllConfigs.hpp"
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
-void makeAndSendResponse(int fd, const std::string& response_body, int code = 200, const std::string &status = "OK");
+
 
 Session::Session(int fd, const Socket& sock): fd(fd), sesSocket(sock) {
 //    std::cout << "New session: " << fd << std::endl;
@@ -15,6 +15,9 @@ Session::Session(int fd, const Socket& sock): fd(fd), sesSocket(sock) {
 }
 
 void Session::parseRequest() {
+	if (request.empty()) {
+		throw std::runtime_error("print error");
+	}
 	std::stringstream ss(request);
 	std::string curLine;
 	std::string curWord;
@@ -53,17 +56,19 @@ void Session::getRequest() {
 
 	length = recv(fd, &buff, BUFF_SIZE, 0);
 
-    std::cout << "-------------------------------" << std::endl;
-    std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
-    std::cout << buff << std::endl;
-    std::cout << "-------------------------------" << std::endl;
+//    std::cout << "-------------------------------" << std::endl;
+//    std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
+//    std::cout << buff << std::endl;
+//    std::cout << "-------------------------------" << std::endl;
 
-	if (length == 0){
+	if (length == 0) {
+		respondReady = true;
+		std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+		std::cout << C_RED << request << C_WHITE << std::endl;
+		parseRequest();
 		throw std::runtime_error("connection is closed");
 	}
 	else if (length < 0 ) {
-        // запрос еще не поступил
-		throw std::runtime_error("receiving info error");
     }
 	else if (length <= BUFF_SIZE) {
 
@@ -102,13 +107,20 @@ Location getMyLocation(const std::vector<Location> &locations, const std::string
 	return locations[locations.size() - 1];
 }
 
-void Session::errorPageHandle(const int &code) {
-//	std::ifstream errorFile;
-//	handleAsFile(true);
-
-	std::stringstream ss;
+void Session::errorPageHandle(unsigned int &code) {
+	std::ifstream errorFile;
 	std::string status = code == 200 ? "OK" : code == 404 ? "Not Found" : code == 403 ? "Forbidden" : code == 405 ?
-			"Method Not Allowed" : code == 413 ? "Request Entity Too Large": "";
+			"Method Not Allowed" : code == 413 ? "Request Entity Too Large": code == 500 ? "Internal Server Error" :
+			code == 503 ? "Service Unavailable" : code == 505 ? "HTTP Version Not Supported" : "";
+
+	for (unsigned long i = 0; i < config.getErrorPagesVectorSize(); ++i) {
+		if (code == config.getCode(i)) {
+			makeAndSendResponse(fd,  openAndReadTheFile(config.getPath(i)), code, status);
+			return;
+		}
+	}
+	// default error page if wasn't defined in .conf
+	std::stringstream ss;
 	ss << "<!DOCTYPE html>\n"
 		  "<html lang=\"EN\">\n"
 		  "<head>\n"
@@ -125,22 +137,20 @@ void Session::errorPageHandle(const int &code) {
 	makeAndSendResponse(fd, ss.str(), code, status);
 }
 
-void makeAndSendResponse(int fd, const std::string& response_body, int code, const std::string &status) {
+void Session::makeAndSendResponse(int fd, const std::string& response_body, unsigned int code, const std::string
+&status) {
 	std::stringstream response;
-
 	response << "HTTP/1.1 " << code << " " << status << "\n"
-			 << "Connection: close"
-			 << "Content-Type: text/html; image/gif"
+			 << "Connection: close" << "\n"
+			 << "Content-Type: text/html; image/gif;" << "\n"
 			 << "Content-Length: " << response_body.length() <<"\n"
 			 << "\n"
 			 << response_body;
     std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
     std::cout << C_BLUE << response.str() << C_WHITE << std::endl;
-	int length = (int)send(fd, response.str().c_str(), response.str().length(), 0);
-	if (length < 0)
-		throw std::runtime_error("error sending data");
-	else if (length == 0)
-		throw std::runtime_error("error");
+	ssize_t length = send(fd, response.str().c_str(), response.str().length(), 0);
+	if (length <= 0)
+		throw ErrorException(500);
 }
 
 void Session::handleAsDir(const std::string &url) {
@@ -176,7 +186,8 @@ void Session::handleAsDir(const std::string &url) {
 		throw ErrorException(500);
 }
 
-void Session::handleAsFile() {
+std::string Session::openAndReadTheFile(const std::string &filename) {
+	path = filename;
 	if (access(path.c_str(), R_OK) == 1)
 		throw ErrorException(403);
 	std::ifstream fin(path);
@@ -189,8 +200,7 @@ void Session::handleAsFile() {
 		if (!fin.eof())
 			response_body << "\n";
 	}
-	std::string response;
-	makeAndSendResponse(fd,  response_body.str());
+	return response_body.str();
 }
 
 //делает body ответа и отправяет на сокет
@@ -200,14 +210,12 @@ void Session::handleAsCGI() {
     std::ifstream fin(path);
     if (!fin.is_open())
         throw std::runtime_error("file wasn't opened");
-
     std::string line;
     while (std::getline(fin, line)) {
         response_body << line;
         if (!fin.eof())
             response_body << "\n";
     }
-
     makeAndSendResponse(fd, response_body.str());
 }
 
@@ -216,10 +224,10 @@ void Session::sendAnswer(const AllConfigs &configs) {
 //	std::cout << std::endl << "MAP'S CONTENT";
 //	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
 //		std::cout << it->first << it->second << std::endl;
-
 	try {
+		if (header.at("HttpVersion:") != "HTTP/1.1")
+			throw ErrorException(505);
 		std::string url = header.at("Path:");
-
 		config = configs.getRightConfig(header.at("Host:"), sesSocket);
 		Location location;
 		if (!config.getLocations().empty())
@@ -238,14 +246,14 @@ void Session::sendAnswer(const AllConfigs &configs) {
 		struct stat st = {};
 		stat(path.c_str(), &st);
 		if (S_ISREG(st.st_mode))
-			handleAsFile();
+			makeAndSendResponse(fd,  openAndReadTheFile(path));
 		else if (S_ISDIR(st.st_mode)) {
 			if (!location.getExec().empty() && location.getExec().substr(location.getExec().size() - 3) == ".py") {
 				path.append(location.getExec());
 				handleAsCGI();
 			} else if (!location.getIndex().empty()) {
 				path.append(location.getIndex());
-				handleAsFile();
+				makeAndSendResponse(fd,  openAndReadTheFile(path));
 			} else if (location.isAutoIndex()) {
 				handleAsDir(url);
 			} else
@@ -275,6 +283,12 @@ Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
     this->respondReady = oth.respondReady;
     this->request = oth.request;
+	this->path = oth.path;
+	this->config = oth.config;
+	this->sesSocket = oth.sesSocket;
+	this->header = oth.header;
+	this->uploadedFilename = oth.uploadedFilename;
+	this->fileText = oth.fileText;
 	return *this;
 }
 
@@ -300,8 +314,10 @@ void Session::handlePostRequest(const Location &location) {
 		std::ofstream fileToUpl(uploadedFilename);
 		if (fileToUpl.is_open())
 			fileToUpl << fileText;
-		else
+		else {
+			fileToUpl.close();
 			throw ErrorException(403);
+		}
 		fileToUpl.close();
 	}
 	else

@@ -26,7 +26,6 @@ private:
     int qlen;
     bool exit;
     std::vector<Session> sessions;
-//	fd_set writeFds, readFds, masWriteFds, masReadFds;
     FDSet fds;
 };
 
