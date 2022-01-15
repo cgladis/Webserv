@@ -50,27 +50,42 @@ void Session::parseRequest() {
 //считывает запрос порциями по BUFF_SIZE
 //если запрос считан до конца, ставит флаг respondReady
 void Session::getRequest() {
-	char buff[BUFF_SIZE + 1];
-	ssize_t length;
+		char buff[BUFF_SIZE + 1];
+		ssize_t length;
 
+		length = recv(fd, &buff, BUFF_SIZE, 0);
 
-	length = recv(fd, &buff, BUFF_SIZE, 0);
-	std::cout << length << std::endl;
-	buff[length] = 0;
-	if (length == BUFF_SIZE)
-		request.append(buff);
-	else if (length <= BUFF_SIZE && length > 0) {
-		std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
-		std::cout << C_RED << request << C_WHITE << std::endl;
-		request.append(buff);
-		respondReady = true;
-		parseRequest();
-		return;
-	}
-	else {
-		std::cout << strerror(errno) << std::endl;
-		exit(-1);
-	}
+//    std::cout << "-------------------------------" << std::endl;
+//    std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
+//    std::cout << buff << std::endl;
+//    std::cout << "-------------------------------" << std::endl;
+
+		if (length == 0) {
+			respondReady = true;
+			std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+			std::cout << C_RED << request << C_WHITE << std::endl;
+			parseRequest();
+			throw std::runtime_error("connection is closed");
+		}
+		else if (length < 0 ) {
+		}
+		else if (length <= BUFF_SIZE) {
+
+			buff[length] = 0;
+			request.append(buff);
+
+			char tmp[1];
+			ssize_t check_eof = recv(fd, &tmp, 1, MSG_PEEK);
+			if (check_eof < 0) {
+				respondReady = true;
+				std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+				std::cout << C_RED << request << C_WHITE << std::endl;
+				parseRequest();
+			}
+		}
+		else {
+			throw std::runtime_error("unknown error");
+		}
 }
 
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
