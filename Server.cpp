@@ -44,9 +44,16 @@ void Server::addServers(const AllConfigs &configs) {
 //Открывает бесконечный цикл опроса наших сокетов и работу с ними
 void Server::run(const AllConfigs &configs) {
     int resSelect;
+	bool needToRestart;
+	bool isNormalRequest;
+	int g = 0;
+
     while (!exit)
     {
+		isNormalRequest = false;
+		needToRestart = false;
         resSelect = fds.select();
+		g++;
         std::cout << fds << std::endl;
 
 		if (resSelect <= 0) {
@@ -57,17 +64,28 @@ void Server::run(const AllConfigs &configs) {
         for (size_t i = 0; i < listeningSockets.size(); ++i) {
 			if (fds.isSetReadFD(listeningSockets[i].get_fd())) {
 				connect(listeningSockets[i]); // connect event handling
+				needToRestart = true;
 			}
 		}
+		if (needToRestart)
+			continue;
         for (size_t i = 0; i < sessions.size(); ++i) {
             if (fds.isSetReadFD(sessions[i].get_fd())){
 //				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
 				sessions[i].getRequest();
+				isNormalRequest = true;
 			}
             if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
 //				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
 				sessions[i].sendAnswer(configs);
 				finishSession(i);
+				g = 0;
+			}
+			if (fds.isSetWriteFD(sessions[i].get_fd()) && !isNormalRequest && g > 1000) {
+				sessions[i].makeAndSendResponse(sessions[i].get_fd(), sessions[i].openAndReadTheFile
+						("www/images/favicon.ico"), false);
+				finishSession(i);
+				g = 0;
 			}
 		}
     }
@@ -78,7 +96,6 @@ void Server::run(const AllConfigs &configs) {
 //открывает новую сессию для сокета
 void Server::connect(Socket &currentSocket) {
 
-    //try get request
     int fd;
     sockaddr inputSocket;
     socklen_t len;

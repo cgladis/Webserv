@@ -8,9 +8,8 @@ std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
 
 
-Session::Session(int fd, const Socket& sock): fd(fd), sesSocket(sock) {
+Session::Session(int fd, const Socket &sock): fd(fd), sesSocket(sock) {
 //    std::cout << "New session: " << fd << std::endl;
-    request = "";
     respondReady = false;
 }
 
@@ -54,39 +53,24 @@ void Session::getRequest() {
 	char buff[BUFF_SIZE + 1];
 	ssize_t length;
 
+
 	length = recv(fd, &buff, BUFF_SIZE, 0);
-
-//    std::cout << "-------------------------------" << std::endl;
-//    std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
-//    std::cout << buff << std::endl;
-//    std::cout << "-------------------------------" << std::endl;
-
-	if (length == 0) {
-		respondReady = true;
+	std::cout << length << std::endl;
+	buff[length] = 0;
+	if (length == BUFF_SIZE)
+		request.append(buff);
+	else if (length <= BUFF_SIZE && length > 0) {
 		std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
 		std::cout << C_RED << request << C_WHITE << std::endl;
-		parseRequest();
-		throw std::runtime_error("connection is closed");
-	}
-	else if (length < 0 ) {
-    }
-	else if (length <= BUFF_SIZE) {
-
-		buff[length] = 0;
 		request.append(buff);
-
-		char tmp[1];
-		ssize_t check_eof = recv(fd, &tmp, 1, MSG_PEEK);
-		if (check_eof < 0) {
-			respondReady = true;
-			std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
-			std::cout << C_RED << request << C_WHITE << std::endl;
-			parseRequest();
-		}
+		respondReady = true;
+		parseRequest();
+		return;
 	}
 	else {
-        throw std::runtime_error("unknown error");
-    }
+		std::cout << strerror(errno) << std::endl;
+		exit(-1);
+	}
 }
 
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
@@ -190,6 +174,8 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 	path = filename;
 	if (access(path.c_str(), R_OK) == 1)
 		throw ErrorException(403);
+//	if (path.substr(path.size() - 4) != ".html" && path.substr(path.size() - 3) != ".ico")
+//		throw ErrorException(400);
 	std::ifstream fin(path);
 	if (!fin.is_open())
 		throw ErrorException(404);
@@ -293,8 +279,10 @@ Session &Session::operator=(const Session &oth) {
 }
 
 void Session::handlePostRequest(const Location &location) {
+	if (header.find("Content-Length:") == header.end())
+		throw ErrorException(405);
 	if ((unsigned int)std::stoi(header.at("Content-Length:")) > location.getMaxBody())
-		throw ErrorException(413);
+		throw ErrorException(400);
 	size_t pos;
 
 	std::map<std::string, std::string>::iterator it;
