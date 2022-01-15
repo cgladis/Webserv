@@ -44,6 +44,9 @@ public:
 	std::string getServerName() const;
     int getPort();
 	std::string getIP() const;
+	unsigned int getCode(int i) const;
+	std::string getPath(int i) const;
+	unsigned long getErrorPagesVectorSize() const;
 
 private:
 

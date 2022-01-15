@@ -44,10 +44,13 @@ void Server::addServers(const AllConfigs &configs) {
 //Открывает бесконечный цикл опроса наших сокетов и работу с ними
 void Server::run(const AllConfigs &configs) {
     int resSelect;
+	bool needToRestart;
+	int g = 0;
 
     while (!exit)
     {
-        std::cout << fds << std::endl;
+		g++;
+		needToRestart = false;
         resSelect = fds.select();
         std::cout << fds << std::endl;
 
@@ -56,11 +59,15 @@ void Server::run(const AllConfigs &configs) {
 			continue;
 		}
 
-        for (size_t i = 0; i < listeningSockets.size(); ++i)
-            if (fds.isSetReadFD(listeningSockets[i].get_fd())){
-                connect(listeningSockets[i]); // connect event handling
-            }
-
+        for (size_t i = 0; i < listeningSockets.size(); ++i) {
+			if (fds.isSetReadFD(listeningSockets[i].get_fd())) {
+				// creating session's fd via accept();
+				connect(listeningSockets[i]);
+				needToRestart = true;
+			}
+		}
+		if (needToRestart)
+			continue;
         for (size_t i = 0; i < sessions.size(); ++i) {
             if (fds.isSetReadFD(sessions[i].get_fd())){
 //				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
@@ -70,6 +77,15 @@ void Server::run(const AllConfigs &configs) {
 //				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
 				sessions[i].sendAnswer(configs);
 				finishSession(i);
+				g = 0;
+			}
+			// Саня этот костыль с переменной g нужен на тот случай, когда браузер делает запрос, но ничего в него не
+			// кладет, такие запросы будем просто закрывать это ОК. Если придумаешь как усовершенствовать, то
+			// пожалуйста, но учти, что запросы иногда приходят, устанавливаясь сразу в writeFD и только спустя
+			// циклов 10 select'а устанавливаются в readFd
+			if (fds.isSetWriteFD(sessions[i].get_fd()) && g > 100) {
+				finishSession(i);
+				g = 0;
 			}
 		}
     }
@@ -80,15 +96,12 @@ void Server::run(const AllConfigs &configs) {
 //открывает новую сессию для сокета
 void Server::connect(Socket &currentSocket) {
 
-    //try get request
     int fd;
     sockaddr inputSocket;
     socklen_t len;
     fd = accept(currentSocket.get_fd(), &inputSocket, &len);
     if (fd > 0) {
         fds.addFD(fd);
-		// give some time to set fds in fd_sets
-//		usleep(5000);
         sessions.push_back(Session(fd, currentSocket));
 	}
 	else
@@ -99,7 +112,6 @@ void Server::finishSession(size_t i) {
 //    std::cout << "FD " << sessions[i].get_fd() << " CLOSED" <<std::endl;
     fds.deleteFD(sessions[i].get_fd());
     std::cout << "FD " << sessions[i].get_fd() << " CLOSED" <<std::endl;
-//	usleep(5000);
 	close(sessions[i].get_fd());
 //	std::cout << "SESSION CLOSED. FD: " << sessions[i].get_fd() << std::endl;
 	sessions.erase(sessions.begin() + i);
