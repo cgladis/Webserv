@@ -233,10 +233,11 @@ void Session::sendAnswer(const AllConfigs &configs) {
 		Location location;
 		if (!config.getLocations().empty())
 			location = getMyLocation(config.getLocations(), url);
+		else
+			throw ErrorException(500);
 		if (!location.isMethodAvailable(header.at("Method:")))
 			throw ErrorException(405);
 		path = formPath(location, url);
-
 
 		if (header.at("Method:") == "POST")
 			handlePostRequest(location);
