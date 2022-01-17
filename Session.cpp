@@ -108,8 +108,9 @@ Location getMyLocation(const std::vector<Location> &locations, const std::string
 
 void Session::errorPageHandle(unsigned int &code) {
 	std::ifstream errorFile;
-	std::string status = code == 200 ? "OK" : code == 404 ? "Not Found" : code == 403 ? "Forbidden" : code == 405 ?
-			"Method Not Allowed" : code == 413 ? "Request Entity Too Large": code == 500 ? "Internal Server Error" :
+	std::string status = code == 200 ? "Not Found" : code == 403 ? "OK" : code == 404 ? "Forbidden" :
+			code == 405 ? "Method Not Allowed" : code == 411 ? "Length Required" :
+			code == 413 ? "Request Entity Too Large": code == 500 ? "Internal Server Error" :
 			code == 503 ? "Service Unavailable" : code == 505 ? "HTTP Version Not Supported" : "";
 
 	for (unsigned long i = 0; i < config.getErrorPagesVectorSize(); ++i) {
@@ -130,8 +131,10 @@ void Session::errorPageHandle(unsigned int &code) {
 		  "</head>\n"
 		  "<body>\n"
 		  "\t<h1>" << code << "</h1>\n"
-		  "\t<h1>" << status << "</h1>\n"
-		  "</body>\n"
+		  "\t<h1>" << status << "</h1>\n";
+	if (code == 405)
+		ss << "\t<h1> Available methods: " << location.getAvailableMethods() << "</h1>";
+	ss << "</body>\n"
 		  "</html>";
 	makeAndSendResponse(fd, ss.str(), code, status);
 }
@@ -297,10 +300,10 @@ Session &Session::operator=(const Session &oth) {
 
 void Session::handlePostRequest(const Location &location) {
 	if (header.find("Content-Length:") == header.end())
-		throw ErrorException(405);
+		throw ErrorException(411);
 	if ((unsigned int)std::stoi(header.at("Content-Length:")) >
 			location.getMaxBodySize())
-		throw ErrorException(400);
+		throw ErrorException(413);
 	size_t pos;
 
 	std::map<std::string, std::string>::iterator it;

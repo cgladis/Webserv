@@ -9,7 +9,7 @@
 int main(){
 
 	AllConfigs configs("webserv.conf");
-	configs.checkServerNames();
+	configs.findUniqeIpPort();
 
 	Server server;
 	server.addServers(configs);
