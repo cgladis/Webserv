@@ -6,7 +6,7 @@
 #include "AllConfigs.hpp"
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
-
+std::string fixPath(std::string &strToFix);
 
 Session::Session(int fd, const Socket &sock): fd(fd), sesSocket(sock) {
 //    std::cout << "New session: " << fd << std::endl;
@@ -230,7 +230,6 @@ void Session::sendAnswer(const AllConfigs &configs) {
 			throw ErrorException(505);
 		std::string url = header.at("Path:");
 		config = configs.getRightConfig(header.at("Host:"), sesSocket);
-		Location location;
 		if (!config.getLocations().empty())
 			location = getMyLocation(config.getLocations(), url);
 		else
@@ -251,10 +250,12 @@ void Session::sendAnswer(const AllConfigs &configs) {
 			makeAndSendResponse(fd,  openAndReadTheFile(path));
 		else if (S_ISDIR(st.st_mode)) {
 			if (!location.getExec().empty() && location.getExec().substr(location.getExec().size() - 3) == ".py") {
-				path.append(location.getExec());
+				path.append("/" + location.getExec());
+				fixPath(path);
 				handleAsCGI();
 			} else if (!location.getIndex().empty()) {
-				path.append(location.getIndex());
+				path.append("/" + location.getIndex());
+				fixPath(path);
 				makeAndSendResponse(fd,  openAndReadTheFile(path));
 			} else if (location.isAutoIndex()) {
 				handleAsDir(url);
@@ -313,7 +314,7 @@ void Session::handlePostRequest(const Location &location) {
 		// defining, where file should be saved (if user defined)
 		if (!location.getUploadStore().empty() && location.getUploadStore() != "/")
 			uploadedFilename = location.getUploadStore() + "/" + uploadedFilename;
-
+		fixPath(uploadedFilename);
 		// creating and writing to a file
 		std::ofstream fileToUpl(uploadedFilename);
 		if (fileToUpl.is_open())
@@ -351,13 +352,25 @@ std::vector<std::string> split(const std::string& s, char delimiter)
 
 std::string formPath(const Location &location, const std::string &url) {
 	std::string path;
+
 	path = location.getRoot();
-	if ((url == location.getLocationName() || url == location.getLocationName() + "/"))
-		path.append("/");
-	else if (url.size() > location.getLocationName().size()) {
-		if (location.getLocationName() == "/")
-			path.append("/");
+	path.append("/");
+	if (url.size() > location.getLocationName().size())
 		path.append(url.substr(location.getLocationName().size()));
+
+	return fixPath(path);
+}
+
+std::string fixPath(std::string &strToFix) {
+	std::string readyPath;
+	unsigned long i = -1;
+	while (++i < strToFix.size()) {
+		readyPath.push_back(strToFix[i]);
+		if (strToFix.at(i) == '/') {
+			while (strToFix[i + 1] == '/')
+				i++;
+		}
 	}
-	return path;
+	strToFix = readyPath;
+	return readyPath;
 }

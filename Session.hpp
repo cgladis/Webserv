@@ -51,6 +51,7 @@ private:
     std::string request;
 	std::string path;
 	Config config;
+	Location location;
 	Socket sesSocket;
 	std::map<std::string, std::string> header;
 	std::string uploadedFilename;

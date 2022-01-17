@@ -7,8 +7,7 @@
 Location::Location(): autoindex(false) {
 }
 
-Location::Location(std::string locationName): locationName(locationName), autoindex(true) {
-
+Location::Location(std::string locationName): locationName(locationName), autoindex(false) {
 }
 
 Location::Location(const Location &other) {

@@ -39,9 +39,9 @@ public:
 
 private:
     std::string locationName;
-    std::vector<method> methods;
     std::string index;
     std::string root;
+    std::vector<method> methods;
     bool autoindex;
     std::string exec;
     unsigned int max_body;
