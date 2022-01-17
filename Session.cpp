@@ -297,7 +297,8 @@ Session &Session::operator=(const Session &oth) {
 void Session::handlePostRequest(const Location &location) {
 	if (header.find("Content-Length:") == header.end())
 		throw ErrorException(405);
-	if ((unsigned int)std::stoi(header.at("Content-Length:")) > location.getMaxBody())
+	if ((unsigned int)std::stoi(header.at("Content-Length:")) >
+			location.getMaxBodySize())
 		throw ErrorException(400);
 	size_t pos;
 

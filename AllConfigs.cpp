@@ -328,9 +328,10 @@ void AllConfigs::parseAutoindex(std::string &line, int fileLine) {
 }
 
 void AllConfigs::parseMaxBody(std::string &line, int fileLine) {
+	(this->end() - 1)->getLastLocation().setMaxBody(true);
     std::string word = nextWord(line);
     try {
-        (this->end() - 1)->getLastLocation().setMaxBody(word);
+		(this->end() - 1)->getLastLocation().setMaxBody_size(word);
     } catch (std::exception &ex) {
         throw std::runtime_error("Wrong config file in line: "
                                  + std::to_string(fileLine));
