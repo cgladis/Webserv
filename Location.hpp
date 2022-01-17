@@ -30,12 +30,15 @@ public:
     void setRoot(const std::string &param);
     void setExec(const std::string &param);
     void setAutoindex(const std::string &param);
-    void setMaxBody(const std::string &param);
+    void setMaxBody_size(const std::string &param);
     void setUploadStore(const std::string &param);
     std::string getRoot() const;
     std::string getExec() const;
-    unsigned int getMaxBody() const;
+    unsigned int getMaxBodySize() const;
+    bool isMaxBody() const;
+    void setMaxBody(bool status);
     std::string getUploadStore() const;
+	std::string getAvailableMethods() const;
 
 private:
     std::string locationName;
@@ -44,7 +47,8 @@ private:
     std::vector<method> methods;
     bool autoindex;
     std::string exec;
-    unsigned int max_body;
+    bool maxBody;
+    unsigned int max_body_size;
     std::string upload_store;
 };
 

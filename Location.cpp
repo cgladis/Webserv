@@ -4,10 +4,11 @@
 
 #include "Location.hpp"
 
-Location::Location(): autoindex(false) {
+Location::Location(): autoindex(false), maxBody(false) {
 }
 
-Location::Location(std::string locationName): locationName(locationName), autoindex(false) {
+Location::Location(std::string locationName): locationName(locationName), autoindex(true), maxBody(false) {
+
 }
 
 Location::Location(const Location &other) {
@@ -22,8 +23,9 @@ Location &Location::operator=(const Location &other) {
     this->methods = other.methods;
     this->autoindex = other.autoindex;
 	this->exec = other.exec;
-	this->max_body = other.max_body;
+	this->max_body_size = other.max_body_size;
 	this->upload_store = other.upload_store;
+	this->maxBody = other.maxBody;
 
     return *this;
 }
@@ -90,15 +92,13 @@ void Location::setExec(const std::string &param) {
 void Location::setAutoindex(const std::string &param) {
     if (param == "on")
         autoindex = true;
-    else if (param == "off")
-        autoindex = false;
     else
-        throw std::runtime_error("Wrong config file");
+        autoindex = false;
 }
 
-void Location::setMaxBody(const std::string &param) {
+void Location::setMaxBody_size(const std::string &param) {
     try {
-        max_body = std::atoi(param.c_str());
+		max_body_size = std::atoi(param.c_str());
     } catch (std::exception()){
         throw std::runtime_error("Wrong config file");
     }
@@ -116,12 +116,37 @@ std::string Location::getExec() const {
     return exec;
 }
 
-unsigned int Location::getMaxBody() const {
-    return max_body;
+unsigned int Location::getMaxBodySize() const {
+    return max_body_size;
 }
 
 std::string Location::getUploadStore() const {
     return upload_store;
 }
 
+bool Location::isMaxBody() const
+{
+	return maxBody;
+}
 
+void Location::setMaxBody(bool status)
+{
+	maxBody = status;
+}
+
+std::string Location::getAvailableMethods() const
+{
+	std::string result;
+	for (size_t i = 0; i < this->methods.size(); ++i)
+	{
+		if (this->methods[i] == GET)
+			result += "GET";
+		else if (this->methods[i] == POST)
+			result += "POST";
+		else if (this->methods[i] == DELETE)
+			result += "DELETE";
+		if (this->methods.size() > 1 && this->methods.size() != i + 1)
+			result += ", ";
+	}
+	return result;
+}
