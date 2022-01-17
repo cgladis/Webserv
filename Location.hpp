@@ -38,6 +38,7 @@ public:
     bool isMaxBody() const;
     void setMaxBody(bool status);
     std::string getUploadStore() const;
+	std::string getAvailableMethods() const;
 
 private:
     std::string locationName;

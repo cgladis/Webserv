@@ -133,3 +133,20 @@ void Location::setMaxBody(bool status)
 {
 	maxBody = status;
 }
+
+std::string Location::getAvailableMethods() const
+{
+	std::string result;
+	for (size_t i = 0; i < this->methods.size(); ++i)
+	{
+		if (this->methods[i] == GET)
+			result += "GET";
+		else if (this->methods[i] == POST)
+			result += "POST";
+		else if (this->methods[i] == DELETE)
+			result += "DELETE";
+		if (this->methods.size() > 1 && this->methods.size() != i + 1)
+			result += ", ";
+	}
+	return result;
+}
