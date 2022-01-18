@@ -7,7 +7,8 @@
 Location::Location(): autoindex(false), maxBody(false) {
 }
 
-Location::Location(std::string locationName): locationName(locationName), autoindex(true), maxBody(false) {
+Location::Location(std::string locationName): locationName(locationName),
+autoindex(false), maxBody(false) {
 
 }
 

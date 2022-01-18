@@ -15,6 +15,7 @@ Config &Config::operator=(const Config &other) {
     this->error_page = other.error_page;
     this->returnField = other.returnField;
     this->locations = other.locations;
+    this->isReturn = other.isReturn;
     return *this;
 }
 
@@ -42,7 +43,7 @@ void Config::setErrorPage(const sErrorPage &param) {
     error_page.push_back(param);
 }
 
-void Config::setReturn(const std::string &param) {
+void Config::setReturnField(const std::string &param) {
     returnField = param;
 }
 
@@ -80,4 +81,21 @@ unsigned long Config::getErrorPagesVectorSize() const {
 	return error_page.size();
 }
 
+bool Config::getIsReturn() const
+{
+	return isReturn;
+}
 
+void Config::setIsReturn(bool status)
+{
+	isReturn = status;
+}
+void Config::setReturnCode(const int &code)
+{
+	returnCode = code;
+}
+
+unsigned int Config::getReturnCode() const
+{
+	return (returnCode);
+}
