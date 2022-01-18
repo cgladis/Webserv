@@ -9,6 +9,7 @@
 #include <iostream>
 //#include <string>
 #include "Location.hpp"
+#include <sstream>
 
 //
 //struct location{
@@ -27,7 +28,7 @@ struct sErrorPage{
 class Config {
 
 public:
-    Config(){};
+    Config() : port(0), isReturn(false){};
     Config(const Config&);
 
     Config &operator = (const Config&);
@@ -36,7 +37,9 @@ public:
     void setPort(int newPort);
     void setServerName(const std::string &param);
     void setErrorPage(const sErrorPage &param);
-    void setReturn(const std::string &param);
+    void setReturnField(const std::string &param);
+    void setReturnCode(const int &code);
+    unsigned int getReturnCode() const;
     void addLocation(std::string locationName);
     Location &getLastLocation();
 	std::vector<Location> getLocations();
@@ -47,6 +50,8 @@ public:
 	unsigned int getCode(int i) const;
 	std::string getPath(int i) const;
 	unsigned long getErrorPagesVectorSize() const;
+	bool getIsReturn() const;
+	void setIsReturn(bool);
 
 private:
 
@@ -55,6 +60,8 @@ private:
     std::string server_name;
     std::vector<sErrorPage> error_page;
     std::string returnField;
+    int returnCode;
+	bool isReturn;
 
     std::vector<Location> locations;
 

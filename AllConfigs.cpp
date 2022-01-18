@@ -153,25 +153,29 @@ void AllConfigs::parseErrorPage(std::string &line, int fileLine) {
 }
 
 void AllConfigs::parseReturn(std::string &line, int fileLine) {
+	(this->end() - 1)->setIsReturn(true);
 
-    std::string word = nextWord(line);
-    word += nextWord(line);
-    word = nextWord(line);
-    if (word != ":")
-        throw std::runtime_error("Wrong config file in line: "
-                                 + std::to_string(fileLine));
-    word += nextWord(line);
+	std::string word = nextWord(line);
+	unsigned int code;
+	std::stringstream ss;
+	ss << word;
+	ss >> code;
+	(this->end() - 1)->setReturnCode(code);
 
-    try {
-        (this->end() - 1)->setReturn(word);
-    } catch (std::exception &ex)
-    {
-        throw std::runtime_error("Wrong config file in line: "
-                                 + std::to_string(fileLine));
-    }
-    if ((word = nextWord(line)) != ";")
-        throw std::runtime_error("Wrong config file in line: "
-                                 + std::to_string(fileLine));
+	std::size_t found = line.find_first_of(":");
+	if (found != std::string::npos)
+	{
+		word = nextWord(line);
+		word += nextWord(line);
+		word += nextWord(line);
+	}
+	else
+		word = nextWord(line);
+	(this->end() - 1)->setReturnField(word);
+
+	if ((word = nextWord(line)) != ";")
+		throw std::runtime_error("Wrong config file in line: "
+								 + std::to_string(fileLine));
 }
 
 void AllConfigs::parseLocation(std::string &line, int fileLine) {
