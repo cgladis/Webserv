@@ -14,9 +14,8 @@ Session::Session(int fd, const Socket &sock): fd(fd), sesSocket(sock) {
 }
 
 void Session::parseRequest() {
-	if (request.empty()) {
+	if (request.empty())
 		throw std::runtime_error("print error");
-	}
 	std::stringstream ss(request);
 	std::string curLine;
 	std::string curWord;
@@ -31,19 +30,17 @@ void Session::parseRequest() {
 	}
 
 	size_t startPos;
-	int count = 0;
+	bool parseFileText = false;
 	while (std::getline(ss, curLine)) {
-		if (curLine == "\r") {
-			count++;
-			continue;
-		}
-		if (count == 2) {
+		if (curLine == "\r")
+			parseFileText = true;
+		if (parseFileText)
 			fileText.append(curLine + "\n");
-			continue;
+		else {
+			startPos = curLine.find(':');
+			value = curLine.substr(startPos + 2);
+			header.insert(std::make_pair(curLine.substr(0, startPos + 1), value));
 		}
-		startPos = curLine.find(':');
-		value = curLine.substr(startPos + 2);
-		header.insert(std::make_pair(curLine.substr(0, startPos + 1), value));
 	}
 }
 
@@ -108,7 +105,7 @@ Location getMyLocation(const std::vector<Location> &locations, const std::string
 
 void Session::errorPageHandle(unsigned int &code) {
 	std::ifstream errorFile;
-	std::string status = code == 200 ? "Not Found" : code == 403 ? "OK" : code == 404 ? "Forbidden" :
+	std::string status = code == 200 ? "OK" : code == 403 ? "Forbidden" : code == 404 ? "Not Found" :
 			code == 405 ? "Method Not Allowed" : code == 411 ? "Length Required" :
 			code == 413 ? "Request Entity Too Large": code == 500 ? "Internal Server Error" :
 			code == 503 ? "Service Unavailable" : code == 505 ? "HTTP Version Not Supported" : "";
@@ -225,14 +222,13 @@ void Session::handleAsCGI() {
 
 //формирует и отправляет ответ
 void Session::sendAnswer(const AllConfigs &configs) {
-//	std::cout << std::endl << "MAP'S CONTENT";
-//	for (std::map<std::string, std::string>::iterator it = header.begin(); it != header.end(); it++)
-//		std::cout << it->first << it->second << std::endl;
 	try {
 		if (header.at("HttpVersion:") != "HTTP/1.1")
 			throw ErrorException(505);
 		std::string url = header.at("Path:");
 		config = configs.getRightConfig(header.at("Host:"), sesSocket);
+//		if (config.isReturn())
+//			makeAndSendResponse(fd, config.getReturnAddress(), config.getReturnCode(), "Redirected");
 		if (!config.getLocations().empty())
 			location = getMyLocation(config.getLocations(), url);
 		else
@@ -241,8 +237,15 @@ void Session::sendAnswer(const AllConfigs &configs) {
 			throw ErrorException(405);
 		path = formPath(location, url);
 
-		if (header.at("Method:") == "POST")
+		if (header.at("Method:") == "PUT") {
+			uploadedFilename = path.substr(location.getRoot().size() + 1);
+			std::ofstream ofile(uploadedFilename);
+			makeAndSendResponse(fd, "", 201, "Connected");
+			return;
+		}
+		else if (header.at("Method:") == "POST") {
 			handlePostRequest(location);
+		}
 		else if (header.at("Method:") == "DELETE")
 			handleDeleteRequest();
 
@@ -291,6 +294,7 @@ Session &Session::operator=(const Session &oth) {
     this->request = oth.request;
 	this->path = oth.path;
 	this->config = oth.config;
+	this->location = oth.location;
 	this->sesSocket = oth.sesSocket;
 	this->header = oth.header;
 	this->uploadedFilename = oth.uploadedFilename;
@@ -300,7 +304,7 @@ Session &Session::operator=(const Session &oth) {
 
 void Session::handlePostRequest(const Location &location) {
 	if (header.find("Content-Length:") == header.end())
-		throw ErrorException(411);
+		throw ErrorException();
 	if ((unsigned int)std::stoi(header.at("Content-Length:")) >
 			location.getMaxBodySize())
 		throw ErrorException(413);
