@@ -11,7 +11,7 @@ std::string formPath(const Location &location, const std::string &url);
 std::string fixPath(std::string &strToFix);
 
 Session::Session(int fd, const Socket &sock):
-fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1) {
+		fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false) {
 }
 
 void Session::parseHeader() {
@@ -63,50 +63,52 @@ int readLength(int fd) {
 }
 
 void Session::parseAsChunked() {
-	std::ofstream ofile(path, std::ios_base::out | std::ios_base::trunc);
-	if (!ofile.is_open())
-		exit(-1);
-	int chunkLen = 0;
-	while((chunkLen = readLength(fd)) != 0) {
-		char megaBuff[chunkLen + 1];
-		megaBuff[chunkLen] = 0;
-		recv(fd, &megaBuff, chunkLen, 0);
-		ofile << megaBuff;
-		recv(fd, &megaBuff, 1, 0);
-		recv(fd, &megaBuff, 1, 0);
+	int chunkLen;
+
+	chunkLen = readLength(fd);
+	if (chunkLen == 0) {
+		respondReady = true;
+		recv(fd, nullptr, 2, 0);
+		return;
 	}
-	ofile.close();
+	char megaBuff[chunkLen + 1];
+	megaBuff[chunkLen] = 0;
+	recv(fd, &megaBuff, chunkLen, 0);
+	fileText.append(megaBuff);
+	recv(fd, &megaBuff, 2, 0);
 }
 
 void Session::getRequest() {
 	char buff[2];
 
-	if (request.find("\r\n\r") != std::string::npos) {
+	if (request.find("\r\n\r") != std::string::npos && !isHeaderRead) {
 		parseHeader();
-		if (isChunked) {
-			recv(fd, &buff, 1, 0);
-			respondReady = true;
-			return;
-		}
-		else if (contentLength != -1) {
-
-			char extraBuff[contentLength + 2];
-			recv(fd, &extraBuff, contentLength + 1, 0);
-			extraBuff[contentLength + 1] = 0;
-			request.append(extraBuff);
-			fileText = extraBuff;
-			return;
-		}
-		else {
-			respondReady = true;
-			std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
-			std::cout << C_RED << request << C_WHITE << std::endl;
-			return;
-		}
+		recv(fd, &buff, 1, 0);
+		isHeaderRead = true;
 	}
-	recv(fd, &buff, 1, 0);
-	buff[1] = 0;
-	request.append(buff);
+	else if (!isHeaderRead) {
+		recv(fd, &buff, 1, 0);
+		buff[1] = 0;
+		request.append(buff);
+		return;
+	}
+
+	if (isChunked) {
+		parseAsChunked();
+	}
+	else if (contentLength != -1) {
+		char extraBuff[contentLength + 2];
+		recv(fd, &extraBuff, contentLength + 1, 0);
+		extraBuff[contentLength + 1] = 0;
+		request.append(extraBuff);
+		fileText = extraBuff;
+		respondReady = true;
+	}
+	else {
+		std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+		std::cout << C_RED << request << C_WHITE << std::endl;
+		respondReady = true;
+	}
 }
 
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
@@ -274,7 +276,11 @@ void Session::sendAnswer(const AllConfigs &configs) {
 		path = formPath(location, url);
 
 		if (header.at("Method:") == "PUT") {
-			parseAsChunked();
+			std::ofstream ofile(path, std::ios_base::out | std::ios_base::trunc);
+			ofile << fileText;
+			makeAndSendResponse(fd, "");
+			ofile.close();
+			return;
 		}
 		else if (header.at("Method:") == "POST") {
 			handlePostRequest();
@@ -334,6 +340,7 @@ Session &Session::operator=(const Session &oth) {
 	this->fileText = oth.fileText;
 	this->isChunked = oth.isChunked;
 	this->contentLength = oth.contentLength;
+	this->isHeaderRead = oth.isHeaderRead;
 	return *this;
 }
 

@@ -58,6 +58,7 @@ private:
 	std::string fileText;
 	bool isChunked;
 	int contentLength;
+	bool isHeaderRead;
 };
 
 
