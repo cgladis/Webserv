@@ -128,7 +128,6 @@ bool FDSet::isSetReadFD(int fd) const{
 
 int FDSet::select() {
     refresh();
-    usleep(1000);
     int result = ::select(max_fd + 1, &readFds, &writeFds, nullptr, nullptr);
     return result;
 }

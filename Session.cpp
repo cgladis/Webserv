@@ -11,7 +11,8 @@ std::string formPath(const Location &location, const std::string &url);
 std::string fixPath(std::string &strToFix);
 
 Session::Session(int fd, const Socket &sock):
-		fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false) {
+		fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false),
+		isSGI(false) {
 }
 
 void Session::parseHeader() {
@@ -37,10 +38,12 @@ void Session::parseHeader() {
 		header.insert(std::make_pair(curLine.substr(0, startPos + 1), value));
 	}
 	if (header.find("Content-Length:") != header.end())
-		contentLength = atoi(header.at("Content-Length:").c_str());
+		contentLength = std::atoi(header.at("Content-Length:").c_str());
 	else if (header.find("Transfer-Encoding:") != header.end() && header.at("Transfer-Encoding:") == "chunked\r") {
 		isChunked = true;
 	}
+	recv(fd, nullptr, 1, 0);
+
 }
 
 int readLength(int fd) {
@@ -78,12 +81,29 @@ void Session::parseAsChunked() {
 	recv(fd, &megaBuff, 2, 0);
 }
 
-void Session::getRequest() {
+void Session::initializeAndCheckData(const AllConfigs &configs) {
+	std::string url = header.at("Path:");
+
+	config = configs.getRightConfig(header.at("Host:"), sesSocket);
+	location = getMyLocation(config.getLocations(), url);
+	path = formPath(location, url);
+	if (header.find("Content-Length:") != header.end() && atoi(header.at("Content-Length").c_str()) > (int)location
+	.getMaxBodySize())
+		throw ErrorException(413);
+	if (path.substr(path.size() - 3) == ".py")
+		isSGI = true;
+	if (!location.isMethodAvailable(header.at("Method:")))
+		throw ErrorException(405);
+
+}
+
+void Session::getRequest(const AllConfigs &configs) {
 	char buff[2];
 
 	if (request.find("\r\n\r") != std::string::npos && !isHeaderRead) {
 		parseHeader();
-		recv(fd, &buff, 1, 0);
+		initializeAndCheckData(configs);
+
 		isHeaderRead = true;
 	}
 	else if (!isHeaderRead) {
@@ -95,6 +115,7 @@ void Session::getRequest() {
 
 	if (isChunked) {
 		parseAsChunked();
+		usleep(2000);
 	}
 	else if (contentLength != -1) {
 		char extraBuff[contentLength + 2];
@@ -111,7 +132,7 @@ void Session::getRequest() {
 	}
 }
 
-Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
+Location Session::getMyLocation(const std::vector<Location> &locations, const std::string &url) {
 	if (url == "/")
 		return locations[locations.size() - 1];
 	std::vector<std::string> urlWords = split(url, '/');
@@ -129,7 +150,7 @@ Location getMyLocation(const std::vector<Location> &locations, const std::string
 	return locations[locations.size() - 1];
 }
 
-void Session::errorPageHandle(unsigned int &code) {
+void Session::errorPageHandle(unsigned int code) {
 	std::ifstream errorFile;
 	std::string status = code == 200 ? "OK" : code == 403 ? "Forbidden" : code == 404 ? "Not Found" :
 			code == 405 ? "Method Not Allowed" : code == 411 ? "Length Required" :
@@ -256,63 +277,47 @@ void Session::handleAsCGI() {
     makeAndSendResponse(fd, response_body.str());
 }
 
-//формирует и отправляет ответ
-void Session::sendAnswer(const AllConfigs &configs) {
-	try {
-		if (header.at("HttpVersion:") != "HTTP/1.1")
-			throw ErrorException(505);
-		std::string url = header.at("Path:");
-		config = configs.getRightConfig(header.at("Host:"), sesSocket);
-		if (config.getIsReturn()) {
-			makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
-			return;
-		}
-		if (!config.getLocations().empty())
-			location = getMyLocation(config.getLocations(), url);
-		else
-			throw ErrorException(500);
-		if (!location.isMethodAvailable(header.at("Method:")))
-			throw ErrorException(405);
-		path = formPath(location, url);
 
-		if (header.at("Method:") == "PUT") {
-			std::ofstream ofile(path, std::ios_base::out | std::ios_base::trunc);
-			ofile << fileText;
-			makeAndSendResponse(fd, "");
-			ofile.close();
-			return;
-		}
-		else if (header.at("Method:") == "POST") {
-			handlePostRequest();
-		}
-		else if (header.at("Method:") == "DELETE")
-			handleDeleteRequest();
+void Session::sendAnswer() {
+	if (header.at("HttpVersion:") != "HTTP/1.1")
+		throw ErrorException(505);
+	std::string url = header.at("Path:");
+	if (config.getIsReturn()) {
+		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
+		return;
+	}
+	if (isSGI) {
+		handleAsCGI();
+	}
+	if (header.at("Method:") == "PUT") {
+		std::ofstream ofile(path, std::ios_base::out | std::ios_base::trunc);
+		ofile << fileText;
+		makeAndSendResponse(fd, "");
+		ofile.close();
+		return;
+	}
+	else if (header.at("Method:") == "POST")
+		handlePostRequest();
+	else if (header.at("Method:") == "DELETE")
+		handleDeleteRequest();
 
-		// checking the file is a dir, or a file
-		struct stat st = {};
-		stat(path.c_str(), &st);
-		if (S_ISREG(st.st_mode))
+	// checking the file is a dir, or a file
+	struct stat st = {};
+	stat(path.c_str(), &st);
+	if (S_ISREG(st.st_mode))
+		makeAndSendResponse(fd,  openAndReadTheFile(path));
+	else if (S_ISDIR(st.st_mode)) {
+		if (!location.getIndex().empty()) {
+			path.append("/" + location.getIndex());
+			fixPath(path);
 			makeAndSendResponse(fd,  openAndReadTheFile(path));
-		else if (S_ISDIR(st.st_mode)) {
-			if (!location.getExec().empty() && location.getExec().substr(location.getExec().size() - 3) == ".py") {
-				path.append("/" + location.getExec());
-				fixPath(path);
-				handleAsCGI();
-			} else if (!location.getIndex().empty()) {
-				path.append("/" + location.getIndex());
-				fixPath(path);
-				makeAndSendResponse(fd,  openAndReadTheFile(path));
-			} else if (location.isAutoIndex()) {
-				handleAsDir(url);
-			} else
-				throw ErrorException(500);
-		}
-		else
-			throw ErrorException(404);
+		} else if (location.isAutoIndex()) {
+			handleAsDir(url);
+		} else
+			throw ErrorException(500);
 	}
-	catch (ErrorException &er) {
-		errorPageHandle(er.error_code);
-	}
+	else
+		throw ErrorException(404);
 }
 
 bool Session::areRespondReady() const {
@@ -341,6 +346,7 @@ Session &Session::operator=(const Session &oth) {
 	this->isChunked = oth.isChunked;
 	this->contentLength = oth.contentLength;
 	this->isHeaderRead = oth.isHeaderRead;
+	this->isSGI = oth.isSGI;
 	return *this;
 }
 

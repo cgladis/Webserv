@@ -24,6 +24,10 @@
 #define C_BLUE "\033[34m"
 #define C_YELLOW "\033[33m"
 
+class string {
+	const char *c_str();
+};
+
 class Session {
 public:
     Session(int fd, const Socket &);
@@ -34,16 +38,18 @@ public:
 	&status = "OK");
 	void parseAsChunked();
 	void parseHeader();
-    void getRequest();
-    void sendAnswer(const AllConfigs &);
+    void getRequest(const AllConfigs &configs);
+	Location getMyLocation(const std::vector<Location> &locations, const std::string &url);
+	void sendAnswer();
 	void handleAsDir(const std::string &);
-	void errorPageHandle(unsigned int &);
+	void errorPageHandle(unsigned int);
     int get_fd() const;
     bool areRespondReady() const;
 	void handleAsCGI();
 	void handlePostRequest();
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);
+	void initializeAndCheckData(const AllConfigs &configs);
 
 private:
     int fd;
@@ -59,6 +65,7 @@ private:
 	bool isChunked;
 	int contentLength;
 	bool isHeaderRead;
+	bool isSGI;
 };
 
 

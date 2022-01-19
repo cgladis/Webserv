@@ -66,21 +66,26 @@ void Server::run(const AllConfigs &configs) {
 		}
 		if (needToRestart)
 			continue;
-        for (size_t i = 0; i < sessions.size(); ++i) {
-            if (fds.isSetReadFD(sessions[i].get_fd())){
-				sessions[i].getRequest();
-			}
-            if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
-				sessions[i].sendAnswer(configs);
+		for (size_t i = 0; i < sessions.size(); ++i) {
+			try {
+				if (fds.isSetReadFD(sessions[i].get_fd())) {
+					sessions[i].getRequest(configs);
+				}
+				if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
+					sessions[i].sendAnswer();
+					finishSession(i);
+					g = 0;
+				}
+				if (fds.isSetWriteFD(sessions[i].get_fd()) && g > 2000) {
+					finishSession(i);
+					g = 0;
+				}
+			} catch (ErrorException &er) {
+				sessions[i].errorPageHandle(er.error_code);
 				finishSession(i);
-				g = 0;
-			}
-			if (fds.isSetWriteFD(sessions[i].get_fd()) && g > 2000) {
-				finishSession(i);
-				g = 0;
 			}
 		}
-    }
+	}
 }
 
 //устанавливает соединение с сокетом
