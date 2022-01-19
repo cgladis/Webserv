@@ -16,6 +16,7 @@ Config &Config::operator=(const Config &other) {
     this->returnField = other.returnField;
     this->locations = other.locations;
     this->isReturn = other.isReturn;
+	this->returnCode = other.returnCode;
     return *this;
 }
 
@@ -98,4 +99,8 @@ void Config::setReturnCode(const int &code)
 unsigned int Config::getReturnCode() const
 {
 	return (returnCode);
+}
+
+std::string Config::getReturnField() const {
+	return returnField;
 }

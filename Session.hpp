@@ -19,7 +19,7 @@
 #include <map>
 #include <sys/stat.h>
 #include <cstdio>
-#define BUFF_SIZE 100
+#define BUFF_SIZE 1000000
 #define C_RED "\033[31m"
 #define C_WHITE "\033[0m"
 #define C_BLUE "\033[34m"
@@ -33,7 +33,8 @@ public:
 
 	void makeAndSendResponse(int fd, const std::string& response_body, unsigned int code = 200, const std::string
 	&status = "OK");
-	void parseRequest();
+	void parseAsChunked();
+	void parseHeader();
     void getRequest();
     void sendAnswer(const AllConfigs &);
 	void handleAsDir(const std::string &);
@@ -41,7 +42,7 @@ public:
     int get_fd() const;
     bool areRespondReady() const;
 	void handleAsCGI();
-	void handlePostRequest(const Location &);
+	void handlePostRequest();
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);
 
@@ -56,6 +57,8 @@ private:
 	std::map<std::string, std::string> header;
 	std::string uploadedFilename;
 	std::string fileText;
+	bool isChunked;
+	int contentLength;
 };
 
 

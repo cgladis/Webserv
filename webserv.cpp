@@ -13,13 +13,10 @@ int main(){
 
 	Server server;
 	server.addServers(configs);
-	while (true) {
-		try {
-			server.run(configs);
-		}
-		catch (std::runtime_error &ex) {
-			std::cout << "ERROR - " << ex.what() << std::endl;
-			continue;
-		}
+	try {
+		server.run(configs);
+	}
+	catch (std::runtime_error &ex) {
+		std::cout << "ERROR - " << ex.what() << std::endl;
 	}
 }

@@ -74,6 +74,8 @@ bool Location::isMethodAvailable(const std::string &smethod) const {
         searchingMethod = POST;
     else if (smethod == "DELETE")
         searchingMethod = DELETE;
+	else if (smethod == "PUT")
+		searchingMethod = PUT;
 
     for (size_t i = 0; i < methods.size(); ++i) {
         if (methods[i] == searchingMethod)
@@ -146,6 +148,8 @@ std::string Location::getAvailableMethods() const
 			result += "POST";
 		else if (this->methods[i] == DELETE)
 			result += "DELETE";
+		else if (this->methods[i] == PUT)
+			result += "PUT";
 		if (this->methods.size() > 1 && this->methods.size() != i + 1)
 			result += ", ";
 	}

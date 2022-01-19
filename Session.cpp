@@ -4,85 +4,110 @@
 
 #include "Session.hpp"
 #include "AllConfigs.hpp"
+
+
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
 std::string fixPath(std::string &strToFix);
 
-Session::Session(int fd, const Socket &sock): fd(fd), sesSocket(sock) {
-//    std::cout << "New session: " << fd << std::endl;
-    respondReady = false;
+Session::Session(int fd, const Socket &sock):
+fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1) {
 }
 
-void Session::parseRequest() {
+void Session::parseHeader() {
 	if (request.empty())
 		throw std::runtime_error("print error");
 	std::stringstream ss(request);
 	std::string curLine;
 	std::string curWord;
+	size_t startPos;
 	std::string value;
 
 	std::getline(ss, curLine);
 	std::stringstream localSs(curLine);
 	std::string firstLineHeader[3] = {"Method:", "Path:", "HttpVersion:"};
+	header.clear();
 	for (size_t i = 0; i < 3; ++i) {
 		localSs >> curWord;
 		header.insert(std::make_pair(firstLineHeader[i], curWord));
 	}
-
-	size_t startPos;
-	bool parseFileText = false;
 	while (std::getline(ss, curLine)) {
-		if (curLine == "\r")
-			parseFileText = true;
-		if (parseFileText)
-			fileText.append(curLine + "\n");
-		else {
-			startPos = curLine.find(':');
-			value = curLine.substr(startPos + 2);
-			header.insert(std::make_pair(curLine.substr(0, startPos + 1), value));
-		}
+		startPos = curLine.find(':');
+		value = curLine.substr(startPos + 2);
+		header.insert(std::make_pair(curLine.substr(0, startPos + 1), value));
+	}
+	if (header.find("Content-Length:") != header.end())
+		contentLength = atoi(header.at("Content-Length:").c_str());
+	else if (header.find("Transfer-Encoding:") != header.end() && header.at("Transfer-Encoding:") == "chunked\r") {
+		isChunked = true;
 	}
 }
 
-//считывает запрос порциями по BUFF_SIZE
-//если запрос считан до конца, ставит флаг respondReady
+int readLength(int fd) {
+	std::string length;
+	char buff[2];
+	recv(fd, &buff, 1, 0);
+	while (buff[0] != '\r') {
+		buff[1] = 0;
+		length.append(buff);
+		recv(fd, &buff, 1, 0);
+	}
+	recv(fd, &buff, 1, 0);
+	if (length == "0")
+		return 0;
+	int x;
+	std::stringstream ss;
+	ss << std::hex << length;
+	ss >> x;
+	return x;
+}
+
+void Session::parseAsChunked() {
+	char buffalo[2];
+	recv(fd, &buffalo, 1, 0);
+	int chunkLen;
+	while((chunkLen = readLength(fd)) != 0) {
+		char megaBuff[chunkLen + 1];
+		recv(fd, &megaBuff, chunkLen, 0);
+		megaBuff[chunkLen] = 0;
+		fileText.append(megaBuff);
+		recv(fd, &megaBuff, 1, 0);
+		recv(fd, &megaBuff, 1, 0);
+	}
+}
+
 void Session::getRequest() {
-		char buff[BUFF_SIZE + 1];
-		ssize_t length;
+		char buff[2];
 
-		length = recv(fd, &buff, BUFF_SIZE, 0);
-
-//    std::cout << "-------------------------------" << std::endl;
-//    std::cout << "FD: " << fd << " LENGTH: " << length << std::endl;
-//    std::cout << buff << std::endl;
-//    std::cout << "-------------------------------" << std::endl;
-
-		if (length == 0) {
-			respondReady = true;
-			std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
-			std::cout << C_RED << request << C_WHITE << std::endl;
-			parseRequest();
-			throw std::runtime_error("connection is closed");
-		}
-		else if (length < 0 ) {
-		}
-		else if (length <= BUFF_SIZE) {
-
-			buff[length] = 0;
-			request.append(buff);
-
-			char tmp[1];
-			ssize_t check_eof = recv(fd, &tmp, 1, MSG_PEEK);
-			if (check_eof < 0) {
+		if (request.find("\r\n\r") != std::string::npos) {
+			parseHeader();
+			if (isChunked) {
+				parseAsChunked();
+				recv(fd, &buff, 2, 0);
 				respondReady = true;
 				std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
 				std::cout << C_RED << request << C_WHITE << std::endl;
-				parseRequest();
+				return;
+			}
+			else if (contentLength != -1) {
+
+				char extraBuff[contentLength + 2];
+				recv(fd, &extraBuff, contentLength + 1, 0);
+				extraBuff[contentLength + 1] = 0;
+				request.append(extraBuff);
+				fileText = extraBuff;
+				return;
+			}
+			else {
+				respondReady = true;
+				std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+				std::cout << C_RED << request << C_WHITE << std::endl;
+				return;
 			}
 		}
-		else {
-			throw std::runtime_error("unknown error");
-		}
+		recv(fd, &buff, 1, 0);
+		buff[1] = 0;
+		request.append(buff);
 }
 
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
@@ -139,12 +164,20 @@ void Session::errorPageHandle(unsigned int &code) {
 void Session::makeAndSendResponse(int fd, const std::string& response_body, unsigned int code, const std::string
 &status) {
 	std::stringstream response;
-	response << "HTTP/1.1 " << code << " " << status << "\n"
-			 << "Connection: close" << "\n"
-			 << "Content-Type: text/html; image/gif;" << "\n"
-			 << "Content-Length: " << response_body.length() <<"\n"
-			 << "\n"
-			 << response_body;
+	response << "HTTP/1.1 " << code << " " << status << "\n";
+	if (code == 301)
+		response << "Location: http://" << response_body << "\n";
+	else if (code == 201)
+		response << "Content-Location: /" << path << "\n"
+				 << "\n"
+				 << "";
+	else {
+		response << "Connection: close" << "\n"
+				 << "Content-Type: text/html; image/gif;" << "\n"
+				 << "Content-Length: " << response_body.length() << "\n"
+				 << "\n"
+				 << response_body;
+	}
     std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
     std::cout << C_BLUE << response.str() << C_WHITE << std::endl;
 	ssize_t length = send(fd, response.str().c_str(), response.str().length(), 0);
@@ -227,8 +260,10 @@ void Session::sendAnswer(const AllConfigs &configs) {
 			throw ErrorException(505);
 		std::string url = header.at("Path:");
 		config = configs.getRightConfig(header.at("Host:"), sesSocket);
-//		if (config.isReturn())
-//			makeAndSendResponse(fd, config.getReturnAddress(), config.getReturnCode(), "Redirected");
+		if (config.getIsReturn()) {
+			makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
+			return;
+		}
 		if (!config.getLocations().empty())
 			location = getMyLocation(config.getLocations(), url);
 		else
@@ -238,13 +273,14 @@ void Session::sendAnswer(const AllConfigs &configs) {
 		path = formPath(location, url);
 
 		if (header.at("Method:") == "PUT") {
-			uploadedFilename = path.substr(location.getRoot().size() + 1);
-			std::ofstream ofile(uploadedFilename);
-			makeAndSendResponse(fd, "", 201, "Connected");
+			std::ofstream ofile(path);
+			ofile << fileText;
+			makeAndSendResponse(fd, "", 201, "Created");
+			ofile.close();
 			return;
 		}
 		else if (header.at("Method:") == "POST") {
-			handlePostRequest(location);
+			handlePostRequest();
 		}
 		else if (header.at("Method:") == "DELETE")
 			handleDeleteRequest();
@@ -299,42 +335,25 @@ Session &Session::operator=(const Session &oth) {
 	this->header = oth.header;
 	this->uploadedFilename = oth.uploadedFilename;
 	this->fileText = oth.fileText;
+	this->isChunked = oth.isChunked;
+	this->contentLength = oth.contentLength;
 	return *this;
 }
 
-void Session::handlePostRequest(const Location &location) {
-	if (header.find("Content-Length:") == header.end())
-		throw ErrorException();
-	if ((unsigned int)std::stoi(header.at("Content-Length:")) >
-			location.getMaxBodySize())
-		throw ErrorException(413);
-	size_t pos;
-
-	std::map<std::string, std::string>::iterator it;
-	if ((it = header.find("Content-Disposition:")) != header.end()) {
-		// extracting filename
-		if ((pos = it->second.find("filename=")) != std::string::npos)
-			uploadedFilename = it->second.substr(pos + 10);
-		size_t start = uploadedFilename.find_first_not_of('\"');
-		size_t end = uploadedFilename.find_last_not_of("\"\r");
-		uploadedFilename = uploadedFilename.substr(start, end + 1);
-
-		// defining, where file should be saved (if user defined)
-		if (!location.getUploadStore().empty() && location.getUploadStore() != "/")
-			uploadedFilename = location.getUploadStore() + "/" + uploadedFilename;
-		fixPath(uploadedFilename);
-		// creating and writing to a file
-		std::ofstream fileToUpl(uploadedFilename);
-		if (fileToUpl.is_open())
-			fileToUpl << fileText;
-		else {
-			fileToUpl.close();
-			throw ErrorException(403);
-		}
-		fileToUpl.close();
+void Session::handlePostRequest() {
+	if (header.find("Content-Length:") != header.end()) {
+		if ((unsigned int)std::stoi(header.at("Content-Length:")) > location.getMaxBodySize())
+			throw ErrorException(413);
 	}
-	else
-		throw ErrorException(400);
+	std::ofstream fileToUpl(uploadedFilename);
+	if (fileToUpl.is_open())
+		fileToUpl << fileText;
+	else {
+		fileToUpl.close();
+		throw ErrorException(403);
+	}
+	fileToUpl.close();
+
 }
 
 void Session::handleDeleteRequest() {

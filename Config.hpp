@@ -52,6 +52,7 @@ public:
 	unsigned long getErrorPagesVectorSize() const;
 	bool getIsReturn() const;
 	void setIsReturn(bool);
+	std::string getReturnField() const;
 
 private:
 

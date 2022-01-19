@@ -201,6 +201,8 @@ void AllConfigs::parseMethods(std::string &line, int fileLine) {
                 (this->end() - 1)->getLastLocation().AddMethod(POST);
             else if (word == "DELETE")
                 (this->end() - 1)->getLastLocation().AddMethod(DELETE);
+			else if (word == "PUT")
+				(this->end() - 1)->getLastLocation().AddMethod(PUT);
             else if (word == "," or word == ";")
                 continue;
             else

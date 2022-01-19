@@ -4,11 +4,11 @@
 
 #include <arpa/inet.h>
 #include "Socket.hpp"
-#include "cerrno"
+#include "cerrno" // TODO delete
 
 Socket::Socket() {
 	if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-		throw std::runtime_error("Error while creating socket: " + std::string(std::strerror(errno)));
+		throw std::runtime_error("Error while creating socket: " + std::string(std::strerror(errno))); // TODO delete
 	std::cout << "New Socket. FD = " << fd << std::endl;
 }
 
@@ -45,7 +45,7 @@ void Socket::bind(const std::string &ip, int port) {
 
 	//bind port
     if (::bind(fd, reinterpret_cast<const sockaddr *>(&socketAddr), sizeof(socketAddr)) == -1) {
-		std::cout << "Bind error! (Socket::bind) " + std::string(std::strerror(errno)) << std::endl;
+		std::cout << "Bind error! (Socket::bind) " + std::string(std::strerror(errno)) << std::endl; // TODO delete
 		throw std::runtime_error("bind error");
 	}
 }

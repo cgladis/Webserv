@@ -12,7 +12,7 @@ Server::Server(): qlen(5), exit(false) {
 
 void handleSelectError(int resSelect) {
 	if (resSelect < 0) {
-		if (errno != EINTR)
+		if (errno != EINTR) // TODO delete
 			std::cout << "STATUS: ERROR " << strerror(errno) << std::endl;
 		else
 			std::cout << "STATUS: NO SIGNAL " << std::endl;
@@ -52,7 +52,6 @@ void Server::run(const AllConfigs &configs) {
 		g++;
 		needToRestart = false;
         resSelect = fds.select();
-        std::cout << fds << std::endl;
 
 		if (resSelect <= 0) {
 			handleSelectError(resSelect);
@@ -61,7 +60,6 @@ void Server::run(const AllConfigs &configs) {
 
         for (size_t i = 0; i < listeningSockets.size(); ++i) {
 			if (fds.isSetReadFD(listeningSockets[i].get_fd())) {
-				// creating session's fd via accept();
 				connect(listeningSockets[i]);
 				needToRestart = true;
 			}
@@ -70,20 +68,14 @@ void Server::run(const AllConfigs &configs) {
 			continue;
         for (size_t i = 0; i < sessions.size(); ++i) {
             if (fds.isSetReadFD(sessions[i].get_fd())){
-//				std::cout << "STATUS: OPEN FOR READ " << sessions[i].get_fd() <<std::endl;
 				sessions[i].getRequest();
 			}
             if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
-//				std::cout << "STATUS: OPEN FOR WRITE " << sessions[i].get_fd() <<std::endl;
 				sessions[i].sendAnswer(configs);
 				finishSession(i);
 				g = 0;
 			}
-			// Саня этот костыль с переменной g нужен на тот случай, когда браузер делает запрос, но ничего в него не
-			// кладет, такие запросы будем просто закрывать это ОК. Если придумаешь как усовершенствовать, то
-			// пожалуйста, но учти, что запросы иногда приходят, устанавливаясь сразу в writeFD и только спустя
-			// циклов 10 select'а устанавливаются в readFd
-			if (fds.isSetWriteFD(sessions[i].get_fd()) && g > 100) {
+			if (fds.isSetWriteFD(sessions[i].get_fd()) && g > 2000) {
 				finishSession(i);
 				g = 0;
 			}
