@@ -63,51 +63,50 @@ int readLength(int fd) {
 }
 
 void Session::parseAsChunked() {
-	char buffalo[2];
-	recv(fd, &buffalo, 1, 0);
-	int chunkLen;
+	std::ofstream ofile(path, std::ios_base::out | std::ios_base::trunc);
+	if (!ofile.is_open())
+		exit(-1);
+	int chunkLen = 0;
 	while((chunkLen = readLength(fd)) != 0) {
 		char megaBuff[chunkLen + 1];
-		recv(fd, &megaBuff, chunkLen, 0);
 		megaBuff[chunkLen] = 0;
-		fileText.append(megaBuff);
+		recv(fd, &megaBuff, chunkLen, 0);
+		ofile << megaBuff;
 		recv(fd, &megaBuff, 1, 0);
 		recv(fd, &megaBuff, 1, 0);
 	}
+	ofile.close();
 }
 
 void Session::getRequest() {
-		char buff[2];
+	char buff[2];
 
-		if (request.find("\r\n\r") != std::string::npos) {
-			parseHeader();
-			if (isChunked) {
-				parseAsChunked();
-				recv(fd, &buff, 2, 0);
-				respondReady = true;
-				std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
-				std::cout << C_RED << request << C_WHITE << std::endl;
-				return;
-			}
-			else if (contentLength != -1) {
-
-				char extraBuff[contentLength + 2];
-				recv(fd, &extraBuff, contentLength + 1, 0);
-				extraBuff[contentLength + 1] = 0;
-				request.append(extraBuff);
-				fileText = extraBuff;
-				return;
-			}
-			else {
-				respondReady = true;
-				std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
-				std::cout << C_RED << request << C_WHITE << std::endl;
-				return;
-			}
+	if (request.find("\r\n\r") != std::string::npos) {
+		parseHeader();
+		if (isChunked) {
+			recv(fd, &buff, 1, 0);
+			respondReady = true;
+			return;
 		}
-		recv(fd, &buff, 1, 0);
-		buff[1] = 0;
-		request.append(buff);
+		else if (contentLength != -1) {
+
+			char extraBuff[contentLength + 2];
+			recv(fd, &extraBuff, contentLength + 1, 0);
+			extraBuff[contentLength + 1] = 0;
+			request.append(extraBuff);
+			fileText = extraBuff;
+			return;
+		}
+		else {
+			respondReady = true;
+			std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+			std::cout << C_RED << request << C_WHITE << std::endl;
+			return;
+		}
+	}
+	recv(fd, &buff, 1, 0);
+	buff[1] = 0;
+	request.append(buff);
 }
 
 Location getMyLocation(const std::vector<Location> &locations, const std::string &url) {
@@ -166,7 +165,9 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
 	std::stringstream response;
 	response << "HTTP/1.1 " << code << " " << status << "\n";
 	if (code == 301)
-		response << "Location: http://" << response_body << "\n";
+		response << "Location: http://" << response_body << "\n"
+				<< "\n"
+				<< "";
 	else if (code == 201)
 		response << "Content-Location: /" << path << "\n"
 				 << "\n"
@@ -273,11 +274,7 @@ void Session::sendAnswer(const AllConfigs &configs) {
 		path = formPath(location, url);
 
 		if (header.at("Method:") == "PUT") {
-			std::ofstream ofile(path);
-			ofile << fileText;
-			makeAndSendResponse(fd, "", 201, "Created");
-			ofile.close();
-			return;
+			parseAsChunked();
 		}
 		else if (header.at("Method:") == "POST") {
 			handlePostRequest();

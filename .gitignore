@@ -10,6 +10,7 @@ launch.json
 
 # Object files
 *.o
+*.tmp
 *.ko
 *.obj
 *.elf

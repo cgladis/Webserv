@@ -19,7 +19,6 @@
 #include <map>
 #include <sys/stat.h>
 #include <cstdio>
-#define BUFF_SIZE 1000000
 #define C_RED "\033[31m"
 #define C_WHITE "\033[0m"
 #define C_BLUE "\033[34m"
