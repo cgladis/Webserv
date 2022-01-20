@@ -12,7 +12,7 @@ std::string fixPath(std::string &strToFix);
 
 Session::Session(int fd, const Socket &sock):
 		fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false),
-		isSGI(false) {
+		isSGI(false), bodySum(0) {
 }
 
 void Session::parseHeader() {
@@ -70,13 +70,16 @@ void Session::parseAsChunked() {
 
 	chunkLen = readLength(fd);
 	if (chunkLen == 0) {
+		if (location.isMaxBody() &&
+		bodySum > location.getMaxBodySize())
+			throw ErrorException(413);
 		respondReady = true;
 		recv(fd, nullptr, 2, 0);
 		return;
 	}
 	char megaBuff[chunkLen + 1];
 	megaBuff[chunkLen] = 0;
-	recv(fd, &megaBuff, chunkLen, 0);
+	bodySum += recv(fd, &megaBuff, chunkLen, 0);
 	fileText.append(megaBuff);
 	recv(fd, &megaBuff, 2, 0);
 }
@@ -85,9 +88,12 @@ void Session::initializeAndCheckData() {
 	std::string url = header.at("Path:");
 
 	location = getMyLocation(config.getLocations(), url);
+	uploadedFilename = location.getUploadStore() + "/" + url.substr(location.getLocationName().size());
+	fixPath(uploadedFilename);
 	path = formPath(location, url);
-	if (header.find("Content-Length:") != header.end() && atoi(header.at("Content-Length").c_str()) > (int)location
-	.getMaxBodySize())
+	if (header.find("Content-Length:") != header.end() &&
+		location.isMaxBody() &&
+		atoi(header.at("Content-Length").c_str()) > (int)location.getMaxBodySize())
 		throw ErrorException(413);
 	if (path.substr(path.size() - 3) == ".py")
 		isSGI = true;
@@ -107,7 +113,6 @@ void Session::getRequest(const AllConfigs &configs) {
 			return;
 		}
 		initializeAndCheckData();
-
 		isHeaderRead = true;
 	}
 	else if (!isHeaderRead) {
@@ -294,7 +299,7 @@ void Session::sendAnswer() {
 		handleAsCGI();
 	}
 	if (header.at("Method:") == "PUT") {
-		std::ofstream ofile(path, std::ios_base::out | std::ios_base::trunc);
+		std::ofstream ofile(uploadedFilename, std::ios_base::out | std::ios_base::trunc);
 		ofile << fileText;
 		makeAndSendResponse(fd, "");
 		ofile.close();
@@ -351,6 +356,7 @@ Session &Session::operator=(const Session &oth) {
 	this->contentLength = oth.contentLength;
 	this->isHeaderRead = oth.isHeaderRead;
 	this->isSGI = oth.isSGI;
+	this->bodySum = oth.bodySum;
 	return *this;
 }
 

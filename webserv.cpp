@@ -9,11 +9,11 @@
 int main(){
 
 	AllConfigs configs("webserv.conf");
-	configs.findUniqeIpPort();
 
 	Server server;
-	server.addServers(configs);
 	try {
+		configs.findIfSamePort();
+		server.addServers(configs);
 		server.run(configs);
 	}
 	catch (std::runtime_error &ex) {

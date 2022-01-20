@@ -17,7 +17,7 @@ class AllConfigs: public std::vector<Config>{
 
 public:
     AllConfigs(const std::string& filename);
-	void findUniqeIpPort();
+	void findIfSamePort();
 	size_t getUniqIpPortVectorSize() const;
 	std::string getIpPort(size_t i) const;
 	Config getRightConfig(std::string, const Socket &) const;

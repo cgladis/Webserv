@@ -62,6 +62,7 @@ private:
 	int contentLength;
 	bool isHeaderRead;
 	bool isSGI;
+	long bodySum;
 };
 
 
