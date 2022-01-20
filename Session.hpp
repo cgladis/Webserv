@@ -24,10 +24,6 @@
 #define C_BLUE "\033[34m"
 #define C_YELLOW "\033[33m"
 
-class string {
-	const char *c_str();
-};
-
 class Session {
 public:
     Session(int fd, const Socket &);
@@ -49,7 +45,7 @@ public:
 	void handlePostRequest();
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);
-	void initializeAndCheckData(const AllConfigs &configs);
+	void initializeAndCheckData();
 
 private:
     int fd;

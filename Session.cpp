@@ -81,10 +81,9 @@ void Session::parseAsChunked() {
 	recv(fd, &megaBuff, 2, 0);
 }
 
-void Session::initializeAndCheckData(const AllConfigs &configs) {
+void Session::initializeAndCheckData() {
 	std::string url = header.at("Path:");
 
-	config = configs.getRightConfig(header.at("Host:"), sesSocket);
 	location = getMyLocation(config.getLocations(), url);
 	path = formPath(location, url);
 	if (header.find("Content-Length:") != header.end() && atoi(header.at("Content-Length").c_str()) > (int)location
@@ -102,7 +101,12 @@ void Session::getRequest(const AllConfigs &configs) {
 
 	if (request.find("\r\n\r") != std::string::npos && !isHeaderRead) {
 		parseHeader();
-		initializeAndCheckData(configs);
+		config = configs.getRightConfig(header.at("Host:"), sesSocket);
+		if (config.getIsReturn()) {
+			respondReady = true;
+			return;
+		}
+		initializeAndCheckData();
 
 		isHeaderRead = true;
 	}
