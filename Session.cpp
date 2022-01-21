@@ -335,12 +335,15 @@ Session &Session::operator=(const Session &oth) {
 }
 
 void Session::handlePutAndPostRequest() {
-	std::cout << request << std::endl;
+	std::ofstream ofile;
+	std::string uploadPath = path.insert(location.getRoot().size() ,"/" + location.getUploadStore() + "/");
+	fixPath(uploadPath);
 	if (header.at("Method:") == "POST" && access(path.c_str(), 2) != 0)
 		throw ErrorException(403);
-	if (uploadedFilename[0] == '/')
-		uploadedFilename = uploadedFilename.substr(1);
-	std::ofstream ofile(uploadedFilename, std::ios_base::out | std::ios_base::trunc);
+	if (header.at("Method:") == "POST")
+		ofile.open(path, std::ios_base::out | std::ios_base::trunc);
+	else if (header.at("Method:") == "PUT")
+		ofile.open(uploadPath);
 	if (ofile.is_open()) {
 		ofile << fileText;
 		makeAndSendResponse(fd, std::to_string(fileText.size()));

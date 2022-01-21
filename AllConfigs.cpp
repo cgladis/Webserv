@@ -101,11 +101,6 @@ std::string AllConfigs::nextWord(std::string &line) {
 
 void AllConfigs::parseListen(std::string &line, int fileLine) {
     std::string word = nextWord(line);
-	my_regex.setfilter("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
-	bool b_is_match = my_regex.is_match(word.c_str());
-    if(!b_is_match)
-		throw std::runtime_error("Wrong config file in line: "
-								 + std::to_string(fileLine));
 	(this->end() - 1)->setIP(word);
     word = nextWord(line);
     if (word != ":")

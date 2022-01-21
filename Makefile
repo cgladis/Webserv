@@ -1,11 +1,11 @@
 NAME = webserv
 
 CC = clang++
-FLAGS = -Wall -Wextra -Werror -std=c++98 -g
+FLAGS = -Wall -Wextra -Werror -std=c++98 -O2
 
-SRC_NAME = ls_regex.cpp webserv.cpp Config.cpp Socket.cpp Server.cpp \
+SRC_NAME = webserv.cpp Config.cpp Socket.cpp Server.cpp \
 	Session.cpp AllConfigs.cpp Location.cpp FDSet.cpp ErrorException.cpp
-HPP_FILES = ls_regex.hpp Config.hpp Socket.hpp Server.hpp \
+HPP_FILES = Config.hpp Socket.hpp Server.hpp \
 	Session.hpp AllConfigs.hpp Location.hpp FDSet.hpp ErrorException.hpp
 OBJ_PATH = ./obj/
 
@@ -16,7 +16,7 @@ $(OBJ_PATH)%.o: %.cpp $(HPP_FILES)
 
 	@mkdir -p $(OBJ_PATH)
 	@printf  "\r%-25s\033[34m[$<]\033[0m\n" "$(NAME): $@"
-	@$(CC) $(FLAGS) -o $@ -c $<
+	$(CC) $(FLAGS) -o $@ -c $<
 	@printf "\033[A\033[2K"
 
 all: $(NAME) $(HPP_FILES)

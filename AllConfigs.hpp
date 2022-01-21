@@ -10,7 +10,6 @@
 #include <fstream>
 #include "Config.hpp"
 #include "Socket.hpp"
-#include "ls_regex.hpp"
 
 
 class AllConfigs: public std::vector<Config>{
@@ -23,7 +22,6 @@ public:
 	Config getRightConfig(std::string, const Socket &) const;
 
 private:
-    ls_regex my_regex;
 	int count;
 	std::vector<std::string> uniqeIpPort;
 	std::vector<Config> configsWithDefaultSerName;
