@@ -37,7 +37,7 @@ public:
     void getRequest(const AllConfigs &configs);
 	Location getMyLocation(const std::vector<Location> &locations, const std::string &url);
 	void sendAnswer();
-	void handleAsDir(const std::string &);
+	void handleAsDir();
 	void errorPageHandle(unsigned int);
     int get_fd() const;
     bool areRespondReady() const;

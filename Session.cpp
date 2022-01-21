@@ -95,8 +95,10 @@ void Session::initializeAndCheckData() {
 		location.isMaxBody() &&
 		atoi(header.at("Content-Length").c_str()) > (int)location.getMaxBodySize())
 		throw ErrorException(413);
-	if (path.substr(path.size() - 3) == ".py")
+	if (path.substr(path.size() - 3) == ".py") {
 		isSGI = true;
+		return;
+	}
 	if (!location.isMethodAvailable(header.at("Method:")))
 		throw ErrorException(405);
 
@@ -218,7 +220,8 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
 		throw ErrorException(500);
 }
 
-void Session::handleAsDir(const std::string &url) {
+void Session::handleAsDir() {
+	std::string pathToFile;
 	if (access(path.c_str(), R_OK) == 1)
 		throw ErrorException(403);
 	DIR* dir = opendir(path.c_str());
@@ -235,12 +238,9 @@ void Session::handleAsDir(const std::string &url) {
 					 "<body>\n"
 					 "<ul>\n";
 	while ((stDir = readdir(dir)) != nullptr) {
-		if (url == "/")
-			response_body << "<li><a href=\"" << url + stDir->d_name << "\">" << stDir->d_name << "</a></li>\n";
-		else if (std::string(stDir->d_name) == ".")
-			response_body << "<li><a href=\"" << url << "\">" << stDir->d_name << "</a></li>\n";
-		else
-			response_body << "<li><a href=\"" << url + "/" + stDir->d_name << "\">" << stDir->d_name << "</a></li>\n";
+		pathToFile = path.substr(location.getRoot().size()) + "/" + stDir->d_name;
+		fixPath(pathToFile);
+		response_body << "<li><a href=\"" << pathToFile << "\">" << stDir->d_name << "</a></li>\n";
 	}
 	response_body << "</ul>\n"
 					 "</body>\n"
@@ -272,18 +272,6 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 
 //делает body ответа и отправяет на сокет
 void Session::handleAsCGI() {
-    std::stringstream response_body;
-
-    std::ifstream fin(path);
-    if (!fin.is_open())
-        throw std::runtime_error("file wasn't opened");
-    std::string line;
-    while (std::getline(fin, line)) {
-        response_body << line;
-        if (!fin.eof())
-            response_body << "\n";
-    }
-    makeAndSendResponse(fd, response_body.str());
 }
 
 
@@ -295,22 +283,18 @@ void Session::sendAnswer() {
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
 		return;
 	}
-	if (isSGI) {
+	if (isSGI)
 		handleAsCGI();
-	}
-	if (header.at("Method:") == "PUT") {
+	if (header.at("Method:") == "PUT" || header.at("Method:") == "POST") {
 		std::ofstream ofile(uploadedFilename, std::ios_base::out | std::ios_base::trunc);
 		ofile << fileText;
 		makeAndSendResponse(fd, "");
 		ofile.close();
 		return;
 	}
-	else if (header.at("Method:") == "POST")
-		handlePostRequest();
 	else if (header.at("Method:") == "DELETE")
 		handleDeleteRequest();
 
-	// checking the file is a dir, or a file
 	struct stat st = {};
 	stat(path.c_str(), &st);
 	if (S_ISREG(st.st_mode))
@@ -321,7 +305,7 @@ void Session::sendAnswer() {
 			fixPath(path);
 			makeAndSendResponse(fd,  openAndReadTheFile(path));
 		} else if (location.isAutoIndex()) {
-			handleAsDir(url);
+			handleAsDir();
 		} else
 			throw ErrorException(500);
 	}
@@ -361,17 +345,8 @@ Session &Session::operator=(const Session &oth) {
 }
 
 void Session::handlePostRequest() {
-	if (header.find("Content-Length:") != header.end()) {
-		if ((unsigned int)std::stoi(header.at("Content-Length:")) > location.getMaxBodySize())
-			throw ErrorException(413);
-	}
 	std::ofstream fileToUpl(uploadedFilename);
-	if (fileToUpl.is_open())
-		fileToUpl << fileText;
-	else {
-		fileToUpl.close();
-		throw ErrorException(403);
-	}
+	fileToUpl << fileText;
 	fileToUpl.close();
 
 }
