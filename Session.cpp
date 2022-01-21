@@ -42,6 +42,8 @@ void Session::parseHeader() {
 	else if (header.find("Transfer-Encoding:") != header.end() && header.at("Transfer-Encoding:") == "chunked\r") {
 		isChunked = true;
 	}
+	if (header.at("HttpVersion:") != "HTTP/1.1")
+		throw ErrorException(505);
 	recv(fd, nullptr, 1, 0);
 
 }
@@ -95,18 +97,18 @@ void Session::initializeAndCheckData() {
 		location.isMaxBody() &&
 		atoi(header.at("Content-Length").c_str()) > (int)location.getMaxBodySize())
 		throw ErrorException(413);
-	if (path.substr(path.size() - 3) == ".py") {
+	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 4) == ".py"
+		|| path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 4) == ".sh")
+		&& !location.getExec().empty()) {
 		isSGI = true;
 		return;
 	}
 	if (!location.isMethodAvailable(header.at("Method:")))
 		throw ErrorException(405);
-
 }
 
 void Session::getRequest(const AllConfigs &configs) {
 	char buff[2];
-
 	if (request.find("\r\n\r") != std::string::npos && !isHeaderRead) {
 		parseHeader();
 		config = configs.getRightConfig(header.at("Host:"), sesSocket);
@@ -126,7 +128,7 @@ void Session::getRequest(const AllConfigs &configs) {
 
 	if (isChunked) {
 		parseAsChunked();
-		usleep(2000);
+		usleep(1500);
 	}
 	else if (contentLength != -1) {
 		char extraBuff[contentLength + 2];
@@ -255,8 +257,6 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 	path = filename;
 	if (access(path.c_str(), R_OK) == 1)
 		throw ErrorException(403);
-//	if (path.substr(path.size() - 4) != ".html" && path.substr(path.size() - 3) != ".ico")
-//		throw ErrorException(400);
 	std::ifstream fin(path);
 	if (!fin.is_open())
 		throw ErrorException(404);
@@ -270,47 +270,37 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 	return response_body.str();
 }
 
-//делает body ответа и отправяет на сокет
 void Session::handleAsCGI() {
+	makeAndSendResponse(fd, std::to_string(fileText.size()));
 }
 
-
 void Session::sendAnswer() {
-	if (header.at("HttpVersion:") != "HTTP/1.1")
-		throw ErrorException(505);
-	std::string url = header.at("Path:");
-	if (config.getIsReturn()) {
+	if (config.getIsReturn())
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
-		return;
-	}
-	if (isSGI)
+	else if (isSGI && header.at("Method:") != "DELETE")
 		handleAsCGI();
-	if (header.at("Method:") == "PUT" || header.at("Method:") == "POST") {
-		std::ofstream ofile(uploadedFilename, std::ios_base::out | std::ios_base::trunc);
-		ofile << fileText;
-		makeAndSendResponse(fd, "");
-		ofile.close();
-		return;
-	}
+	else if (header.at("Method:") == "PUT" || header.at("Method:") == "POST")
+		handlePutAndPostRequest();
 	else if (header.at("Method:") == "DELETE")
 		handleDeleteRequest();
-
-	struct stat st = {};
-	stat(path.c_str(), &st);
-	if (S_ISREG(st.st_mode))
-		makeAndSendResponse(fd,  openAndReadTheFile(path));
-	else if (S_ISDIR(st.st_mode)) {
-		if (!location.getIndex().empty()) {
-			path.append("/" + location.getIndex());
-			fixPath(path);
+	else {
+		struct stat st = {};
+		stat(path.c_str(), &st);
+		if (S_ISREG(st.st_mode))
 			makeAndSendResponse(fd,  openAndReadTheFile(path));
-		} else if (location.isAutoIndex()) {
-			handleAsDir();
-		} else
-			throw ErrorException(500);
+		else if (S_ISDIR(st.st_mode)) {
+			if (!location.getIndex().empty()) {
+				path.append("/" + location.getIndex());
+				fixPath(path);
+				makeAndSendResponse(fd,  openAndReadTheFile(path));
+			} else if (location.isAutoIndex()) {
+				handleAsDir();
+			} else
+				throw ErrorException(500);
+		}
+		else
+			throw ErrorException(404);
 	}
-	else
-		throw ErrorException(404);
 }
 
 bool Session::areRespondReady() const {
@@ -344,17 +334,27 @@ Session &Session::operator=(const Session &oth) {
 	return *this;
 }
 
-void Session::handlePostRequest() {
-	std::ofstream fileToUpl(uploadedFilename);
-	fileToUpl << fileText;
-	fileToUpl.close();
-
+void Session::handlePutAndPostRequest() {
+	std::cout << request << std::endl;
+	if (header.at("Method:") == "POST" && access(path.c_str(), 2) != 0)
+		throw ErrorException(403);
+	if (uploadedFilename[0] == '/')
+		uploadedFilename = uploadedFilename.substr(1);
+	std::ofstream ofile(uploadedFilename, std::ios_base::out | std::ios_base::trunc);
+	if (ofile.is_open()) {
+		ofile << fileText;
+		makeAndSendResponse(fd, std::to_string(fileText.size()));
+		ofile.close();
+	}
+	else
+		makeAndSendResponse(fd, fileText);
 }
 
 void Session::handleDeleteRequest() {
-	std::string fileToDelete = header.at("Path:").substr(1);
-	std::remove(fileToDelete.c_str());
-	path = "www/index.html";
+	if (access(path.c_str(), 0) != 0)
+		throw ErrorException(403);
+	std::remove(path.c_str());
+	makeAndSendResponse(fd, "file " + path + " deleted");
 }
 
 std::vector<std::string> split(const std::string& s, char delimiter)

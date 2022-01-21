@@ -42,7 +42,7 @@ public:
     int get_fd() const;
     bool areRespondReady() const;
 	void handleAsCGI();
-	void handlePostRequest();
+	void handlePutAndPostRequest();
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);
 	void initializeAndCheckData();

@@ -76,7 +76,7 @@ void Server::run(const AllConfigs &configs) {
 					finishSession(i);
 					g = 0;
 				}
-				if (fds.isSetWriteFD(sessions[i].get_fd()) && g > 2000) {
+				if (fds.isSetWriteFD(sessions[i].get_fd()) && g > 5000) {
 					finishSession(i);
 					g = 0;
 				}
