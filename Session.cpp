@@ -270,8 +270,69 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 	return response_body.str();
 }
 
+std::vector<std::string> cgi_env(std::map<std::string, std::string> header, std::string path, Config conf)
+{
+    std::vector<std::string>	tmp;
+    tmp.push_back("AUTH_TYPE=anonymous");
+//    tmp.push_back("CONTENT_LENGTH=" + header.at("CONTENT_LENGTH"));
+//    tmp.push_back("CONTENT_TYPE=" + header.at("CONTENT_TYPE"));
+    tmp.push_back("GATEWAY_INTERFACE=CGI/1.1");
+//    tmp.push_back("PATH_INFO=" + header.at("PATH_INFO"));
+//    tmp.push_back("PATH_TRANSLATED=" + header.at("PATH_TRANSLATED"));
+//    tmp.push_back("QUERY_STRING=" + header.at("QUERY_STRING"));
+//    tmp.push_back("REMOTE_ADDR=" + header.at("REMOTE_ADDR")); //ip
+//    tmp.push_back("REMOTE_IDENT=." + header.at("REMOTE_IDENT")); //host
+    tmp.push_back("REMOTE_USER=");
+    tmp.push_back("REQUEST_METHOD=GET");
+//    tmp.push_back("REQUEST_URI=" + header.at("REQUEST_URI"));
+    tmp.push_back("SCRIPT_NAME=" + path);
+//    tmp.push_back("SERVER_NAME=" + header.at("SERVER_NAME"));
+//    tmp.push_back("SERVER_PORT=" +  header.at("SERVER_PORT"));
+//    tmp.push_back("SERVER_PROTOCOL=" + header.at("SERVER_PROTOCOL")); //version
+    tmp.push_back("SERVER_SOFTWARE=webserver");
+    std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
+    for (; begin != end; ++begin)
+        tmp.push_back("HTTP_" + begin->first + "=" + begin->second);
+    return tmp;
+    (void )conf;
+}
+
+//делает body ответа и отправяет на сокет
 void Session::handleAsCGI() {
-	makeAndSendResponse(fd, std::to_string(fileText.size()));
+
+    // переменные класса
+    // fd - фд сессии
+    // path - путь к скрипту (.py)
+    // header - мапа с данными из хедера запроса, чтобы получить данные, используй ее вот так header.at("Host:")
+    // посмотреть содержимое мапы - либо через дебагер, либо разкоментить блок в SendAnswer
+    // config - конфиг, с которым мы работаем на время текущего соединения
+    // location - соответственно location, с которым мы работаем
+
+    std::vector<std::string>cgi_env_map=cgi_env(header, path, config);
+
+    std::stringstream response_body;
+
+    std::cout << C_YELLOW << "ЗАШЕЛ"  << C_WHITE <<std::endl;
+    std::ifstream fin(path);
+    if (!fin.is_open())
+        throw std::runtime_error("file wasn't opened");
+    pipe(cgi_fd);
+    int pid = fork();
+    if (pid == 0){
+        dup2(cgi_fd[1], 1);
+        execve(path.c_str(), NULL, NULL);
+    }
+    close(cgi_fd[1]);
+
+
+    std::string line;
+    while (std::getline(fin, line)) {
+        response_body << line;
+        if (!fin.eof())
+            response_body << "\n";
+    }
+
+	makeAndSendResponse(fd, std::to_string(fileText.size()), 200);
 }
 
 void Session::sendAnswer() {

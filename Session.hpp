@@ -19,6 +19,7 @@
 #include <map>
 #include <sys/stat.h>
 #include <cstdio>
+#include "StringArray.hpp"
 #define C_RED "\033[31m"
 #define C_WHITE "\033[0m"
 #define C_BLUE "\033[34m"
@@ -63,6 +64,7 @@ private:
 	bool isHeaderRead;
 	bool isSGI;
 	long bodySum;
+    int cgi_fd[2];
 };
 
 

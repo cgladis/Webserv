@@ -1,7 +1,7 @@
 NAME = webserv
 
 CC = clang++
-FLAGS = -Wall -Wextra -Werror -std=c++98 -O2
+FLAGS = -Wall -Wextra -Werror -std=c++98 -O2 -g
 
 SRC_NAME = webserv.cpp Config.cpp Socket.cpp Server.cpp \
 	Session.cpp AllConfigs.cpp Location.cpp FDSet.cpp ErrorException.cpp
