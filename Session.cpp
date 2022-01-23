@@ -270,29 +270,29 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 	return response_body.str();
 }
 
-std::vector<std::string> cgi_env(std::map<std::string, std::string> header, std::string path, Config conf)
+StringArray cgi_env(std::map<std::string, std::string> header, std::string path, Config conf)
 {
-    std::vector<std::string>	tmp;
-    tmp.push_back("AUTH_TYPE=anonymous");
+    StringArray	tmp;
+    tmp.addString("AUTH_TYPE=anonymous");
 //    tmp.push_back("CONTENT_LENGTH=" + header.at("CONTENT_LENGTH"));
 //    tmp.push_back("CONTENT_TYPE=" + header.at("CONTENT_TYPE"));
-    tmp.push_back("GATEWAY_INTERFACE=CGI/1.1");
+    tmp.addString("GATEWAY_INTERFACE=CGI/1.1");
 //    tmp.push_back("PATH_INFO=" + header.at("PATH_INFO"));
 //    tmp.push_back("PATH_TRANSLATED=" + header.at("PATH_TRANSLATED"));
 //    tmp.push_back("QUERY_STRING=" + header.at("QUERY_STRING"));
 //    tmp.push_back("REMOTE_ADDR=" + header.at("REMOTE_ADDR")); //ip
 //    tmp.push_back("REMOTE_IDENT=." + header.at("REMOTE_IDENT")); //host
-    tmp.push_back("REMOTE_USER=");
-    tmp.push_back("REQUEST_METHOD=GET");
+    tmp.addString("REMOTE_USER=");
+    tmp.addString("REQUEST_METHOD=GET");
 //    tmp.push_back("REQUEST_URI=" + header.at("REQUEST_URI"));
-    tmp.push_back("SCRIPT_NAME=" + path);
+    tmp.addString("SCRIPT_NAME=" + path);
 //    tmp.push_back("SERVER_NAME=" + header.at("SERVER_NAME"));
 //    tmp.push_back("SERVER_PORT=" +  header.at("SERVER_PORT"));
 //    tmp.push_back("SERVER_PROTOCOL=" + header.at("SERVER_PROTOCOL")); //version
-    tmp.push_back("SERVER_SOFTWARE=webserver");
+    tmp.addString("SERVER_SOFTWARE=webserver");
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
     for (; begin != end; ++begin)
-        tmp.push_back("HTTP_" + begin->first + "=" + begin->second);
+        tmp.addString("HTTP_" + begin->first + "=" + begin->second);
     return tmp;
     (void )conf;
 }
@@ -308,7 +308,7 @@ void Session::handleAsCGI() {
     // config - конфиг, с которым мы работаем на время текущего соединения
     // location - соответственно location, с которым мы работаем
 
-    std::vector<std::string>cgi_env_map=cgi_env(header, path, config);
+    StringArray cgi_env_map=cgi_env(header, path, config);
 
     std::stringstream response_body;
 
@@ -320,7 +320,7 @@ void Session::handleAsCGI() {
     int pid = fork();
     if (pid == 0){
         dup2(cgi_fd[1], 1);
-        execve(path.c_str(), NULL, NULL);
+        execve(path.c_str(), NULL, cgi_env_map.c_Arr());
     }
     close(cgi_fd[1]);
 

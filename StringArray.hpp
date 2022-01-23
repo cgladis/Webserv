@@ -13,7 +13,13 @@ public:
     StringArray();
     ~StringArray();
 
+    void addString(std::string newString);
+    char **c_Arr();
+
 private:
+    size_t len_cArr();
+    void delete_cArr();
+    void refresh_cArr();
     std::vector<std::string> strArr;
     char **cArr;
 

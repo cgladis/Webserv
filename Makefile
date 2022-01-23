@@ -4,9 +4,11 @@ CC = clang++
 FLAGS = -Wall -Wextra -Werror -std=c++98 -O2 -g
 
 SRC_NAME = webserv.cpp Config.cpp Socket.cpp Server.cpp \
-	Session.cpp AllConfigs.cpp Location.cpp FDSet.cpp ErrorException.cpp
+	Session.cpp AllConfigs.cpp Location.cpp FDSet.cpp ErrorException.cpp \
+	StringArray.cpp
 HPP_FILES = Config.hpp Socket.hpp Server.hpp \
-	Session.hpp AllConfigs.hpp Location.hpp FDSet.hpp ErrorException.hpp
+	Session.hpp AllConfigs.hpp Location.hpp FDSet.hpp ErrorException.hpp \
+	StringArray.hpp
 OBJ_PATH = ./obj/
 
 OBJ_NAME = $(SRC_NAME:.cpp=.o)
