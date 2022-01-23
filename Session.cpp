@@ -97,8 +97,8 @@ void Session::initializeAndCheckData() {
 		location.isMaxBody() &&
 		atoi(header.at("Content-Length").c_str()) > (int)location.getMaxBodySize())
 		throw ErrorException(413);
-	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 4) == ".py"
-		|| path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 4) == ".sh")
+	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
+		|| path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
 		&& !location.getExec().empty()) {
 		isSGI = true;
 		return;
@@ -271,7 +271,8 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 }
 
 void Session::handleAsCGI() {
-	makeAndSendResponse(fd, std::to_string(fileText.size()));
+	exit(-1);
+	makeAndSendResponse(fd, fileText);
 }
 
 void Session::sendAnswer() {
