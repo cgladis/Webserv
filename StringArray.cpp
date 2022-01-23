@@ -61,3 +61,18 @@ size_t StringArray::len_cArr() {
     }
     return count;
 }
+
+size_t StringArray::len() const{
+    return strArr.size();
+}
+
+std::string &StringArray::operator[](size_t index) {
+    return strArr[index];
+}
+
+std::ostream &operator << (std::ostream &out, StringArray &other){
+    for (size_t i = 0; i < other.len(); ++i) {
+        out << other[i] << " ";
+    }
+    return out;
+}

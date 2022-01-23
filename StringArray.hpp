@@ -15,6 +15,8 @@ public:
 
     void addString(std::string newString);
     char **c_Arr();
+    size_t len() const;
+    std::string &operator [] (size_t index);
 
 private:
     size_t len_cArr();
@@ -23,7 +25,10 @@ private:
     std::vector<std::string> strArr;
     char **cArr;
 
+
 };
 
+std::ostream &operator << (std::ostream &out, StringArray &other);
 
-#endif //WEBSERV_STRINGARRAY_HPP
+
+#endif

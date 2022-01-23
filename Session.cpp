@@ -304,6 +304,8 @@ void Session::handleAsCGI() {
 
     StringArray cgi_env_map=cgi_env(header, path, config);
 
+    std::cout << cgi_env_map << std::endl;
+
     std::stringstream response_body;
 
     std::cout << C_YELLOW << "ЗАШЕЛ"  << C_WHITE <<std::endl;
