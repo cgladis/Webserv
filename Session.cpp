@@ -97,12 +97,6 @@ void Session::initializeAndCheckData() {
 		location.isMaxBody() &&
 		atoi(header.at("Content-Length").c_str()) > (int)location.getMaxBodySize())
 		throw ErrorException(413);
-	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
-		|| path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
-		&& !location.getExec().empty()) {
-		isSGI = true;
-		return;
-	}
 	if (!location.isMethodAvailable(header.at("Method:")))
 		throw ErrorException(405);
 }
@@ -338,8 +332,11 @@ void Session::handleAsCGI() {
 void Session::sendAnswer() {
 	if (config.getIsReturn())
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
-	else if (isSGI && header.at("Method:") != "DELETE")
+	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
+			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
+			  && header.at("Method:") != "DELETE" && access(path.c_str(), 2) == 0) {
 		handleAsCGI();
+	}
 	else if (header.at("Method:") == "PUT" || header.at("Method:") == "POST")
 		handlePutAndPostRequest();
 	else if (header.at("Method:") == "DELETE")
@@ -356,7 +353,12 @@ void Session::sendAnswer() {
 				makeAndSendResponse(fd,  openAndReadTheFile(path));
 			} else if (location.isAutoIndex()) {
 				handleAsDir();
-			} else
+			} else if (!location.getExec().empty()) {
+				path.append("/" + location.getExec());
+				fixPath(path);
+				handleAsCGI();
+			}
+			else
 				throw ErrorException(500);
 		}
 		else
