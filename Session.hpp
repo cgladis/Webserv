@@ -25,6 +25,8 @@
 #define C_BLUE "\033[34m"
 #define C_YELLOW "\033[33m"
 
+#define READING_BUFF 100
+
 class Session {
 public:
     Session(int fd, const Socket &);

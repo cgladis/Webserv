@@ -308,7 +308,7 @@ void Session::handleAsCGI() {
 
     std::stringstream response_body;
 
-    std::cout << C_YELLOW << "ЗАШЕЛ"  << C_WHITE <<std::endl;
+//    std::cout << C_YELLOW << "ЗАШЕЛ"  << C_WHITE <<std::endl;
     std::ifstream fin(path);
     if (!fin.is_open())
         throw std::runtime_error("file wasn't opened");
@@ -319,16 +319,18 @@ void Session::handleAsCGI() {
         execve(path.c_str(), NULL, cgi_env_map.c_Arr());
     }
     close(cgi_fd[1]);
-
-
-    std::string line;
-    while (std::getline(fin, line)) {
-        response_body << line;
-        if (!fin.eof())
-            response_body << "\n";
+    wait(0);
+    char data_buf[READING_BUFF];
+    while (ssize_t data_length = read(cgi_fd[0], &data_buf, READING_BUFF) > 0) {
+        response_body << data_buf;
     }
 
-	makeAndSendResponse(fd, std::to_string(fileText.size()), 200);
+//    if (r > 0)
+//        response_body << data_buf;
+//    else
+//        throw std::runtime_error("Reading error handleAsCGI");
+
+	makeAndSendResponse(fd, response_body.str(), 200);
 }
 
 void Session::sendAnswer() {
