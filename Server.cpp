@@ -12,10 +12,7 @@ Server::Server(): qlen(5), exit(false) {
 
 void handleSelectError(int resSelect) {
 	if (resSelect < 0) {
-		if (errno != EINTR) // TODO delete
-			std::cout << "STATUS: ERROR " << strerror(errno) << std::endl;
-		else
-			std::cout << "STATUS: NO SIGNAL " << std::endl;
+		std::cout << "STATUS: ERROR " << std::endl;
 	}
 	if (resSelect == 0)
 		std::cout << "STATUS: TIME OUT " << std::endl;
