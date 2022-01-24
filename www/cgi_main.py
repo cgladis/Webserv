@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
-
+import cgi
+import html
 import os
 
-print('<!DOCTYPE html>')
+form = cgi.FieldStorage()
+first_name = form.getvalue("FIRST_NAME", 'empty')
+second_name = form.getvalue("SECOND_NAME", 'empty')
+first_name = html.escape(first_name)
+second_name = html.escape(second_name)
+
+print("Content-type: text/html")
+print()
 print('<html lang="en">')
 print('<head>')
-print('<link rel="shortcut icon" href="../images/ico_for_py.png">')
-# print('  <style>')
-# print('body {')
+print('<link rel="shortcut icon" href="images/ico_for_py.png">')
+print('  <style>')
+print('body {')
 # print('background: #202124 url(../images/bg_1.jpeg); /* Цвет фона и путь к файлу */')
 # print('color: #fff; /* Цвет текста */')
-# print('}')
+print('}')
 print('</style>')
 print('</head>')
 print()
@@ -22,23 +30,22 @@ for param in os.environ.keys():
 
 if os.environ.get("REQUEST_METHOD") == 'GET':
     print("""
-            <form action="" method="post">
+            <form action="cgi_main.py" method="post">
                 <p>
-                    <label for="login">login</label>
-                    <input type="text" name="login">
-                </p>
-                <p>
-                    <label for="password">password</label>
-                    <input type="text" name="password">
+                    <label for="FIRST_NAME">First name:</label>
+                    <input type="text" name="FIRST_NAME">
+                    <label for="SECOND_NAME">Second name:</label>
+                    <input type="text" name="SECOND_NAME">
                 </p>
                 <p>
                     <input type="submit">
                 </p>
             </form>""")
 elif os.environ.get("REQUEST_METHOD") == 'POST':
-    print('<font size=+5>Thank you for yor answers</font><br>')
-    print('Your login:', os.environ.get("login"), '<br>')
-    print('Your password:', os.environ.get("password"), '<br>')
+
+    print('<font size=+5>Thank you for your answers</font><br>')
+    print("<b>{:<20}</b>: {}<br>".format("Your first name", first_name))
+    print("<b>{:<20}</b>: {}<br>".format("Your second name", second_name))
     print("""
             <form action="" method="get">
                 <p>
