@@ -329,6 +329,7 @@ void Session::handleAsCGI() {
 //        response_body << data_buf;
 //    else
 //        throw std::runtime_error("Reading error handleAsCGI");
+    close(cgi_fd[0]);
 
 	makeAndSendResponse(fd, response_body.str(), 200);
 }
