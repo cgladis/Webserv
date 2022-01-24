@@ -95,7 +95,7 @@ void Session::initializeAndCheckData() {
 	path = formPath(location, url);
 	if (header.find("Content-Length:") != header.end() &&
 		location.isMaxBody() &&
-		atoi(header.at("Content-Length").c_str()) > (int)location.getMaxBodySize())
+		atoi(header.at("Content-Length:").c_str()) > (int)location.getMaxBodySize())
 		throw ErrorException(413);
 	if (!location.isMethodAvailable(header.at("Method:")))
 		throw ErrorException(405);
@@ -122,7 +122,7 @@ void Session::getRequest(const AllConfigs &configs) {
 
 	if (isChunked) {
 		parseAsChunked();
-		usleep(1500);
+		usleep(2000);
 	}
 	else if (contentLength != -1) {
 		char extraBuff[contentLength + 2];
@@ -132,11 +132,8 @@ void Session::getRequest(const AllConfigs &configs) {
 		fileText = extraBuff;
 		respondReady = true;
 	}
-	else {
-		std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
-		std::cout << C_RED << request << C_WHITE << std::endl;
+	else
 		respondReady = true;
-	}
 }
 
 Location Session::getMyLocation(const std::vector<Location> &locations, const std::string &url) {
@@ -192,6 +189,8 @@ void Session::errorPageHandle(unsigned int code) {
 
 void Session::makeAndSendResponse(int fd, const std::string& response_body, unsigned int code, const std::string
 &status) {
+	std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+	std::cout << C_RED << request << C_WHITE << std::endl;
 	std::stringstream response;
 	response << "HTTP/1.1 " << code << " " << status << "\n";
 	if (code == 301)
@@ -293,15 +292,6 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
 
 //делает body ответа и отправяет на сокет
 void Session::handleAsCGI() {
-
-    // переменные класса
-    // fd - фд сессии
-    // path - путь к скрипту (.py)
-    // header - мапа с данными из хедера запроса, чтобы получить данные, используй ее вот так header.at("Host:")
-    // посмотреть содержимое мапы - либо через дебагер, либо разкоментить блок в SendAnswer
-    // config - конфиг, с которым мы работаем на время текущего соединения
-    // location - соответственно location, с которым мы работаем
-
     StringArray cgi_env_map=cgi_env(header, path, config);
 
     std::cout << cgi_env_map << std::endl;
@@ -343,7 +333,8 @@ void Session::sendAnswer() {
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
 	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
-			  && header.at("Method:") != "DELETE" && access(path.c_str(), 2) == 0) {
+			  && (header.at("Method:") == "POST")
+			  && access(path.c_str(), 2) == 0) {
 		handleAsCGI();
 	}
 	else if (header.at("Method:") == "PUT" || header.at("Method:") == "POST")
