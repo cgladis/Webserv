@@ -130,11 +130,13 @@ void Session::getRequest(const AllConfigs &configs) {
 		usleep(2000);
 	}
 	else if (contentLength != -1) {
+		recv(fd, &buff, 1, 0);
 		char extraBuff[contentLength + 2];
-		recv(fd, &extraBuff, contentLength + 1, 0);
-		extraBuff[contentLength + 1] = 0;
-		request.append(extraBuff);
-		fileText = extraBuff;
+		recv(fd, &extraBuff, contentLength, 0);
+		std::cout << extraBuff << std::endl;
+		extraBuff[contentLength] = 0;
+		request.append("\n").append(extraBuff);
+		fileText.append(extraBuff);
 		respondReady = true;
 	}
 	else
@@ -173,6 +175,7 @@ void Session::errorPageHandle(unsigned int code) {
 		}
 	}
 	// default error page if wasn't defined in .conf
+	throw 1;
 	std::stringstream ss;
 	ss << "<!DOCTYPE html>\n"
 		  "<html lang=\"EN\">\n"
@@ -337,7 +340,7 @@ void Session::sendAnswer() {
 	if (config.getIsReturn())
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
 	if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
-		argsForCgi = getArgsFromEncodedString(fileText.substr(1));
+		argsForCgi = getArgsFromEncodedString(fileText);
 
 	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
