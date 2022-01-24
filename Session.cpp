@@ -175,7 +175,6 @@ void Session::errorPageHandle(unsigned int code) {
 		}
 	}
 	// default error page if wasn't defined in .conf
-	throw 1;
 	std::stringstream ss;
 	ss << "<!DOCTYPE html>\n"
 		  "<html lang=\"EN\">\n"
