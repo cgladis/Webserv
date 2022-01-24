@@ -313,13 +313,14 @@ void Session::handleAsCGI() {
     if (!fin.is_open())
         throw std::runtime_error("file wasn't opened");
     pipe(cgi_fd);
-    int pid = fork();
+    pid_t pid = fork();
     if (pid == 0){
         dup2(cgi_fd[1], 1);
         execve(path.c_str(), NULL, cgi_env_map.c_Arr());
     }
     close(cgi_fd[1]);
-    wait(0);
+    int exit_code;
+    waitpid(pid, &exit_code, 0);
     char data_buf[READING_BUFF];
     while (ssize_t data_length = read(cgi_fd[0], &data_buf, READING_BUFF) > 0) {
         response_body << data_buf;
