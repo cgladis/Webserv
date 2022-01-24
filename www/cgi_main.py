@@ -1,46 +1,63 @@
 #!/usr/bin/env python3
 import cgi
 import html
+import http.cookies
 import os
 
 form = cgi.FieldStorage()
 first_name = form.getvalue("FIRST_NAME", 'empty')
 second_name = form.getvalue("SECOND_NAME", 'empty')
-first_name = html.escape(first_name)
-second_name = html.escape(second_name)
+# first_name = html.escape(first_name)
+# second_name = html.escape(second_name)
+cookie = http.cookies.SimpleCookie(os.environ.get("HTTP_COOKIE"))
 
+'TO HEADER'
+
+if os.environ.get("REQUEST_METHOD") == 'POST':
+    print("Set-cookie: FIRST_NAME={}".format(first_name))
+    print("Set-cookie: SECOND_NAME={}".format(second_name))
 print("Content-type: text/html")
 print()
-print('<html lang="en">')
-print('<head>')
-print('<link rel="shortcut icon" href="images/ico_for_py.png">')
-print('  <style>')
-print('body {')
-# print('background: #202124 url(../images/bg_1.jpeg); /* Цвет фона и путь к файлу */')
-# print('color: #fff; /* Цвет текста */')
-print('}')
-print('</style>')
-print('</head>')
-print()
 
+'TO BODY'
+
+print("""
+    <html lang="en">
+    <head>
+        <link rel="shortcut icon" href="../images/ico_for_py.png">
+        <style>
+            body {""")
+print("""  
+                background: #333333 url({}); /* Цвет фона и путь к файлу */
+                color: #f5f5f7; /* Цвет текста */""".format('../images/bg_1.jpeg'))
+print("""
+            }
+        </style>
+    </head>""")
+# print()
+print('<body>')
 print('<font size=+10>Environment</font><br>')
 
 for param in os.environ.keys():
     print("<b>%20s</b>: %s<br>" % (param, os.environ[param]))
+
+cookie_first_name = cookie.get('FIRST_NAME').value if cookie.get('FIRST_NAME') is not None else ""
+cookie_second_name = cookie.get('SECOND_NAME').value if cookie.get('SECOND_NAME') is not None else ""
+print('cookie_first_name {} cookie_second_name {}'.format(cookie_first_name, cookie_second_name))
 
 if os.environ.get("REQUEST_METHOD") == 'GET':
     print("""
             <form action="cgi_main.py" method="post">
                 <p>
                     <label for="FIRST_NAME">First name:</label>
-                    <input type="text" name="FIRST_NAME">
+                    <input type="text" name="FIRST_NAME" value={}>
                     <label for="SECOND_NAME">Second name:</label>
-                    <input type="text" name="SECOND_NAME">
+                    <input type="text" name="SECOND_NAME" value={}>
                 </p>
                 <p>
                     <input type="submit">
                 </p>
-            </form>""")
+            </form>""".format(cookie_first_name, cookie_second_name))
 elif os.environ.get("REQUEST_METHOD") == 'POST':
 
     print('<font size=+5>Thank you for your answers</font><br>')
@@ -62,3 +79,5 @@ else:
                 </p>
             </form>""")
 
+print('</body>')
+print('</html>')
