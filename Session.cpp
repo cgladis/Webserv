@@ -9,6 +9,7 @@
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
 std::string fixPath(std::string &strToFix);
+std::map<std::string, std::string> getArgsFromEncodedString(const std::string &str);
 
 Session::Session(int fd, const Socket &sock):
 		fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false),
@@ -88,7 +89,11 @@ void Session::parseAsChunked() {
 
 void Session::initializeAndCheckData() {
 	std::string url = header.at("Path:");
-
+	std::string toParse;
+	if (url.find('?') != 0 && header.at("Method:") == "GET") {
+		toParse = url.substr(url.find('?') + 1);
+		argsForCgi = getArgsFromEncodedString(toParse);
+	}
 	location = getMyLocation(config.getLocations(), url);
 	uploadedFilename = location.getUploadStore() + "/" + url.substr(location.getLocationName().size());
 	fixPath(uploadedFilename);
@@ -331,7 +336,10 @@ void Session::handleAsCGI() {
 void Session::sendAnswer() {
 	if (config.getIsReturn())
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
-	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
+	if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
+		argsForCgi = getArgsFromEncodedString(fileText.substr(1));
+
+	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
 			  && (header.at("Method:") == "POST")
 			  && access(path.c_str(), 2) == 0) {
@@ -447,6 +455,17 @@ std::string formPath(const Location &location, const std::string &url) {
 		path.append(url.substr(location.getLocationName().size()));
 
 	return fixPath(path);
+}
+
+std::map<std::string, std::string> getArgsFromEncodedString(const std::string &str) {
+	std::map<std::string, std::string> mapToReturn;
+	unsigned long index;
+	std::vector<std::string> argsArray = split(str, '&');
+	for (std::vector<std::string>::iterator it = argsArray.begin(); it != argsArray.end(); it++) {
+		index = it->find('=');
+		mapToReturn.insert(std::make_pair<std::string, std::string>(it->substr(0, index), it->substr(index + 1)));
+	}
+	return mapToReturn;
 }
 
 std::string fixPath(std::string &strToFix) {
