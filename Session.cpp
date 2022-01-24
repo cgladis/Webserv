@@ -267,7 +267,7 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 StringArray cgi_env(std::map<std::string, std::string> header, std::string path, Config conf)
 {
     StringArray	tmp;
-    tmp.addString("AUTH_TYPE=anonymous");
+    tmp.addString("AUTH_TYPE=BASIC");
 //    tmp.push_back("CONTENT_LENGTH=" + header.at("CONTENT_LENGTH"));
 //    tmp.push_back("CONTENT_TYPE=" + header.at("CONTENT_TYPE"));
     tmp.addString("GATEWAY_INTERFACE=CGI/1.1");
@@ -321,8 +321,11 @@ void Session::handleAsCGI() {
     close(cgi_fd[1]);
     int exit_code;
     waitpid(pid, &exit_code, 0);
-    char data_buf[READING_BUFF];
-    while (ssize_t data_length = read(cgi_fd[0], &data_buf, READING_BUFF) > 0) {
+    char data_buf[READING_BUFF + 1];
+    ssize_t data_length;
+    while ((data_length = read(cgi_fd[0], &data_buf, READING_BUFF)) > 0) {
+//        std::cout << data_buf << " : " << data_length << std::endl;
+        data_buf[data_length] = '\0';
         response_body << data_buf;
     }
 
