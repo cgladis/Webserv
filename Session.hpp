@@ -39,12 +39,12 @@ public:
 	void parseHeader();
     void getRequest(const AllConfigs &configs);
 	Location getMyLocation(const std::vector<Location> &locations, const std::string &url);
-	void sendAnswer();
+	void sendAnswer(char **env);
 	void handleAsDir();
 	void errorPageHandle(unsigned int);
     int get_fd() const;
     bool areRespondReady() const;
-	void handleAsCGI();
+	void handleAsCGI(char **env);
 	void handlePutAndPostRequest();
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);

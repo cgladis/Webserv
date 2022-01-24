@@ -39,7 +39,7 @@ void Server::addServers(const AllConfigs &configs) {
 
 //Запускает сервер.
 //Открывает бесконечный цикл опроса наших сокетов и работу с ними
-void Server::run(const AllConfigs &configs) {
+void Server::run(const AllConfigs &configs, char **env) {
     int resSelect;
 	bool needToRestart;
 	int g = 0;
@@ -69,7 +69,7 @@ void Server::run(const AllConfigs &configs) {
 					sessions[i].getRequest(configs);
 				}
 				if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
-					sessions[i].sendAnswer();
+					sessions[i].sendAnswer(env);
 					finishSession(i);
 					g = 0;
 				}
