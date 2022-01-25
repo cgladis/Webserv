@@ -209,9 +209,10 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
 				 << "\n"
 				 << "";
 	else {
-		response << "Connection: close" << "\n"
-				 << "Content-Type: text/html; image/gif;" << "\n"
-				 << "Content-Length: " << response_body.length() << "\n"
+		response << "Connection: close" << "\n";
+		if (path.substr(path.size() - 4) == ".ico")
+			response << "Content-Type: image/gif\n";
+		response << "Content-Length: " << response_body.length() << "\n"
 				 << "\n"
 				 << response_body;
 	}
