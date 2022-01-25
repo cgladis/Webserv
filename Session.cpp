@@ -295,9 +295,9 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     tmp.addString("Remote_User=");
     tmp.addString("Script_Name=" + path);
     tmp.addString("Server_Software=webserver");
-//    std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
-//    for (; begin != end; ++begin)
-//        tmp.addString("HTTP_" + begin->first + "=" + begin->second);
+    std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
+    for (; begin != end; ++begin)
+        tmp.addString("HTTP_" + begin->first + "=" + begin->second);
     return tmp;
     (void )conf;
 }
@@ -313,11 +313,19 @@ void Session::handleAsCGI(char **env) {
     // config - конфиг, с которым мы работаем на время текущего соединения
     // location - соответственно location, с которым мы работаем
 
-	std::cout << *env << std::endl;
-    StringArray cgi_env_map=cgi_env(header, path, config);
+	std::string str;
+	StringArray cgi_env_map=cgi_env(header, path, config);
+
+	while (env && *env)
+	{
+		str = static_cast<std::string>(*env);
+		unsigned long ind = str.find('=');
+		if (ind != 0)
+			cgi_env_map.addString(str);
+		env++;
+	}
 
     std::cout << cgi_env_map << std::endl;
-
     std::stringstream response_body;
 
 //    std::cout << C_YELLOW << "ЗАШЕЛ"  << C_WHITE <<std::endl;
@@ -328,7 +336,7 @@ void Session::handleAsCGI(char **env) {
     pid_t pid = fork();
     if (pid == 0){
         dup2(cgi_fd[1], 1);
-        execve(path.c_str(), NULL, cgi_env_map.c_Arr());
+        execve(path.c_str(), reinterpret_cast<char *const *>(fileText.c_str()), cgi_env_map.c_Arr());
     }
     close(cgi_fd[1]);
     int exit_code;
