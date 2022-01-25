@@ -9,6 +9,7 @@
 std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
 std::string fixPath(std::string &strToFix);
+std::map<std::string, std::string> getArgsFromEncodedString(const std::string &str);
 
 Session::Session(int fd, const Socket &sock):
 		fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false),
@@ -88,7 +89,11 @@ void Session::parseAsChunked() {
 
 void Session::initializeAndCheckData() {
 	std::string url = header.at("Path:");
-
+	std::string toParse;
+	if (url.find('?') != 0 && header.at("Method:") == "GET") {
+		toParse = url.substr(url.find('?') + 1);
+		argsForCgi = getArgsFromEncodedString(toParse);
+	}
 	location = getMyLocation(config.getLocations(), url);
 	uploadedFilename = location.getUploadStore() + "/" + url.substr(location.getLocationName().size());
 	fixPath(uploadedFilename);
@@ -125,11 +130,13 @@ void Session::getRequest(const AllConfigs &configs) {
 		usleep(2000);
 	}
 	else if (contentLength != -1) {
+		recv(fd, &buff, 1, 0);
 		char extraBuff[contentLength + 2];
-		recv(fd, &extraBuff, contentLength + 1, 0);
-		extraBuff[contentLength + 1] = 0;
-		request.append(extraBuff);
-		fileText = extraBuff;
+		recv(fd, &extraBuff, contentLength, 0);
+		std::cout << extraBuff << std::endl;
+		extraBuff[contentLength] = 0;
+		request.append("\n").append(extraBuff);
+		fileText.append(extraBuff);
 		respondReady = true;
 	}
 	else
@@ -202,9 +209,10 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
 				 << "\n"
 				 << "";
 	else {
-		response << "Connection: close" << "\n"
-				 << "Content-Type: text/html; image/gif;" << "\n"
-				 << "Content-Length: " << response_body.length() << "\n"
+		response << "Connection: close" << "\n";
+		if (path.substr(path.size() - 4) == ".ico")
+			response << "Content-Type: image/gif\n";
+		response << "Content-Length: " << response_body.length() << "\n"
 				 << "\n"
 				 << response_body;
 	}
@@ -345,7 +353,10 @@ void Session::handleAsCGI(char **env) {
 void Session::sendAnswer(char **env) {
 	if (config.getIsReturn())
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
-	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
+	if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
+		argsForCgi = getArgsFromEncodedString(fileText);
+
+	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
 			  && (header.at("Method:") == "POST")
 			  && access(path.c_str(), 2) == 0) {
@@ -461,6 +472,17 @@ std::string formPath(const Location &location, const std::string &url) {
 		path.append(url.substr(location.getLocationName().size()));
 
 	return fixPath(path);
+}
+
+std::map<std::string, std::string> getArgsFromEncodedString(const std::string &str) {
+	std::map<std::string, std::string> mapToReturn;
+	unsigned long index;
+	std::vector<std::string> argsArray = split(str, '&');
+	for (std::vector<std::string>::iterator it = argsArray.begin(); it != argsArray.end(); it++) {
+		index = it->find('=');
+		mapToReturn.insert(std::make_pair<std::string, std::string>(it->substr(0, index), it->substr(index + 1)));
+	}
+	return mapToReturn;
 }
 
 std::string fixPath(std::string &strToFix) {

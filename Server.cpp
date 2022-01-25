@@ -44,18 +44,17 @@ void Server::run(const AllConfigs &configs, char **env) {
 	bool needToRestart;
 	int g = 0;
 
-    while (!exit)
-    {
+	while (!exit) {
 		g++;
 		needToRestart = false;
-        resSelect = fds.select();
+		resSelect = fds.select();
 
 		if (resSelect <= 0) {
 			handleSelectError(resSelect);
 			continue;
 		}
 
-        for (size_t i = 0; i < listeningSockets.size(); ++i) {
+		for (size_t i = 0; i < listeningSockets.size(); ++i) {
 			if (fds.isSetReadFD(listeningSockets[i].get_fd())) {
 				connect(listeningSockets[i]);
 				needToRestart = true;
