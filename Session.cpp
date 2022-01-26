@@ -281,6 +281,7 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     tmp.addString("Remote_User=");
     tmp.addString("Script_Name=" + path);
     tmp.addString("Server_Software=webserver");
+    tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
 
     // Добавление переменных из header c префиксом HTTP
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
@@ -340,13 +341,11 @@ void Session::handleAsCGI(char **env) {
         data_buf[data_length] = '\0';
         response_body_stream << data_buf;
     }
+    close(cgi_fd[0]);
+
     std::string response_header = response_body_stream.str().substr(0,response_body_stream.str().find("\n\n"));
     std::string response_body = response_body_stream.str().substr(response_body_stream.str().find("\n\n")+2);
-//    if (r > 0)
-//        response_body_stream << data_buf;
-//    else
-//        throw std::runtime_error("Reading error handleAsCGI");
-    close(cgi_fd[0]);
+
 
 	makeAndSendResponse(fd, response_body, 200, response_header);
 }
