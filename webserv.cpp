@@ -10,6 +10,7 @@ int main(){
 
 	AllConfigs configs("webserv.conf");
 
+
 	Server server;
 	try {
 		configs.findIfSamePort();

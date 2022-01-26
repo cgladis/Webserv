@@ -46,7 +46,9 @@ public:
     int get_fd() const;
     bool areRespondReady() const;
 	void handleAsCGI();
-	void handlePutAndPostRequest();
+	void handlePostRequest();
+	void handlePutRequest();
+	void handleGetRequest();
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);
 	void initializeAndCheckData();
@@ -61,6 +63,7 @@ private:
 	Socket sesSocket;
 	std::map<std::string, std::string> header;
 	std::map<std::string, std::string> argsForCgi;
+	std::map<std::string, std::string> mimeTypes;
 	std::string uploadedFilename;
 	std::string fileText;
 	bool isChunked;

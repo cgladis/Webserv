@@ -10,6 +10,7 @@ std::vector<std::string> split(const std::string& s, char delimiter);
 std::string formPath(const Location &location, const std::string &url);
 std::string fixPath(std::string &strToFix);
 std::map<std::string, std::string> getArgsFromEncodedString(const std::string &str);
+std::map<std::string, std::string> getTypesFromFile(const char *pathToFile);
 
 Session::Session(int fd, const Socket &sock):
 		fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false),
@@ -46,7 +47,6 @@ void Session::parseHeader() {
 	if (header.at("HttpVersion:") != "HTTP/1.1")
 		throw ErrorException(505);
 	recv(fd, nullptr, 1, 0);
-
 }
 
 int readLength(int fd) {
@@ -90,12 +90,19 @@ void Session::parseAsChunked() {
 void Session::initializeAndCheckData() {
 	std::string url = header.at("Path:");
 	std::string toParse;
+	mimeTypes = getTypesFromFile("www/mimeTypes.txt");
 	if (url.find('?') != 0 && header.at("Method:") == "GET") {
 		toParse = url.substr(url.find('?') + 1);
 		argsForCgi = getArgsFromEncodedString(toParse);
+		url = url.substr(0, url.find('?'));
 	}
+	else if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
+		argsForCgi = getArgsFromEncodedString(fileText);
+
 	location = getMyLocation(config.getLocations(), url);
-	uploadedFilename = location.getUploadStore() + "/" + url.substr(location.getLocationName().size());
+	uploadedFilename = location.getRoot() + '/'
+			+ location.getUploadStore() + '/'
+			+ url.substr(location.getLocationName().size());
 	fixPath(uploadedFilename);
 	path = formPath(location, url);
 	if (header.find("Content-Length:") != header.end() &&
@@ -133,7 +140,6 @@ void Session::getRequest(const AllConfigs &configs) {
 		recv(fd, &buff, 1, 0);
 		char extraBuff[contentLength + 2];
 		recv(fd, &extraBuff, contentLength, 0);
-		std::cout << extraBuff << std::endl;
 		extraBuff[contentLength] = 0;
 		request.append("\n").append(extraBuff);
 		fileText.append(extraBuff);
@@ -196,6 +202,9 @@ void Session::errorPageHandle(unsigned int code) {
 
 void Session::makeAndSendResponse(int fd, const std::string& response_body, unsigned int code, const std::string
 &status, std::string response_header, bool nobody) {
+	unsigned long ind;
+	std::string key;
+
 	std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
 	std::cout << C_RED << request << C_WHITE << std::endl;
 	std::stringstream response;
@@ -210,11 +219,15 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
     }
 	else {
 		response << "Connection: close" << "\n";
-		if (path.substr(path.size() - 4) == ".ico")
-			response << "Content-Type: image/gif\n";
-		response << "Content-Length: " << response_body.length() << std::endl;
+		ind = path.find_last_of('.');
+		key = path.substr(ind + 1);
+		std::map<std::string, std::string>::iterator it = mimeTypes.find(key);
+		if (it != mimeTypes.end())
+			response << "Content-Type: " << it->second << "\n";
+		response << "Content-Length: " << response_body.length();
 	}
     response << response_header << "\n\n" << (nobody ? "": response_body);
+
     std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
     std::cout << C_BLUE << response.str() << C_WHITE << std::endl;
 	ssize_t length = send(fd, response.str().c_str(), response.str().length(), 0);
@@ -339,42 +352,20 @@ void Session::handleAsCGI() {
 void Session::sendAnswer() {
 	if (config.getIsReturn())
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
-	if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
-		argsForCgi = getArgsFromEncodedString(fileText);
-
-	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
+	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
 			  && (header.at("Method:") == "POST")
 			  && access(path.c_str(), 2) == 0) {
 		handleAsCGI();
 	}
-	else if (header.at("Method:") == "PUT" || header.at("Method:") == "POST")
-		handlePutAndPostRequest();
+	else if (header.at("Method:") == "POST")
+		handlePostRequest();
+	else if (header.at("Method:") == "PUT")
+		handlePutRequest();
 	else if (header.at("Method:") == "DELETE")
 		handleDeleteRequest();
-	else {
-		struct stat st = {};
-		stat(path.c_str(), &st);
-		if (S_ISREG(st.st_mode))
-			makeAndSendResponse(fd,  openAndReadTheFile(path));
-		else if (S_ISDIR(st.st_mode)) {
-			if (!location.getIndex().empty()) {
-				path.append("/" + location.getIndex());
-				fixPath(path);
-				makeAndSendResponse(fd,  openAndReadTheFile(path));
-			} else if (location.isAutoIndex()) {
-				handleAsDir();
-			} else if (!location.getExec().empty()) {
-				path.append("/" + location.getExec());
-				fixPath(path);
-				handleAsCGI();
-			}
-			else
-				throw ErrorException(500);
-		}
-		else
-			throw ErrorException(404);
-	}
+	else
+		handleGetRequest();
 }
 
 bool Session::areRespondReady() const {
@@ -405,26 +396,41 @@ Session &Session::operator=(const Session &oth) {
 	this->isHeaderRead = oth.isHeaderRead;
 	this->isSGI = oth.isSGI;
 	this->bodySum = oth.bodySum;
+	this->argsForCgi = oth.argsForCgi;
+	this->mimeTypes = oth.mimeTypes;
 	return *this;
 }
 
-void Session::handlePutAndPostRequest() {
+
+
+void Session::handlePostRequest() {
 	std::ofstream ofile;
-	std::string uploadPath = path.insert(location.getRoot().size() ,"/" + location.getUploadStore() + "/");
+	std::string fileName;
+	std::string fileBody;
+	std::string line;
+
+	std::string uploadPath = location.getRoot() + '/' + location.getUploadStore() + '/';
 	fixPath(uploadPath);
-	if (header.at("Method:") == "POST" && access(path.c_str(), 2) != 0)
-		throw ErrorException(403);
-	if (header.at("Method:") == "POST")
-		ofile.open(path, std::ios_base::out | std::ios_base::trunc);
-	else if (header.at("Method:") == "PUT")
-		ofile.open(uploadPath);
-	if (ofile.is_open()) {
-		ofile << fileText;
-		makeAndSendResponse(fd, std::to_string(fileText.size()));
+
+
+	if (header.at("Content-Type:").find("multipart/form-data") != std::string::npos) {
+		fileName = fileText.substr(fileText.find("filename=") + 10);
+		fileName = fileName.substr(0, fileName.find_first_of('\"'));
+		ofile.open(uploadPath + fileName, std::ios_base::out | std::ios_base::trunc);
+		if (!ofile.is_open())
+			throw ErrorException(404);
+		fileBody = fileText.substr(fileText.find("fileName=") + 10);
+		std::stringstream body(fileBody);
+		for (int i = 0; i < 4; i++)
+			std::getline(body, line);
+		while (std::getline(body, line)) {
+			if (line == "\r")
+				break;
+			ofile << line << "\n";
+		}
 		ofile.close();
 	}
-	else
-		makeAndSendResponse(fd, fileText);
+	handleGetRequest();
 }
 
 void Session::handleDeleteRequest() {
@@ -432,6 +438,38 @@ void Session::handleDeleteRequest() {
 		throw ErrorException(403);
 	std::remove(path.c_str());
 	makeAndSendResponse(fd, "file " + path + " deleted");
+}
+
+void Session::handlePutRequest() {
+	std::ofstream ofile(uploadedFilename, std::ios_base::out | std::ios_base::trunc);
+	if (ofile.is_open())
+		ofile << fileText;
+	ofile.close();
+	makeAndSendResponse(fd, std::to_string(fileText.size()));
+}
+
+void Session::handleGetRequest() {
+	struct stat st = {};
+	stat(path.c_str(), &st);
+	if (S_ISREG(st.st_mode))
+		makeAndSendResponse(fd,  openAndReadTheFile(path));
+	else if (S_ISDIR(st.st_mode)) {
+		if (!location.getIndex().empty()) {
+			path.append("/" + location.getIndex());
+			fixPath(path);
+			makeAndSendResponse(fd,  openAndReadTheFile(path));
+		} else if (location.isAutoIndex()) {
+			handleAsDir();
+		} else if (!location.getExec().empty()) {
+			path.append("/" + location.getExec());
+			fixPath(path);
+			handleAsCGI();
+		}
+		else
+			throw ErrorException(500);
+	}
+	else
+		throw ErrorException(404);
 }
 
 std::vector<std::string> split(const std::string& s, char delimiter)
@@ -483,4 +521,21 @@ std::string fixPath(std::string &strToFix) {
 	}
 	strToFix = readyPath;
 	return readyPath;
+}
+
+std::map<std::string, std::string> getTypesFromFile(const char *pathToFile) {
+	std::map<std::string, std::string> types;
+	std::ifstream ifile(pathToFile);
+	std::string line;
+	std::string key;
+	std::string value;
+	if (!ifile.is_open())
+		throw ErrorException(500);
+	while (std::getline(ifile, line)) {
+		std::stringstream ss(line);
+		ss >> value >> key;
+		types.insert(std::pair<std::string, std::string>(key, value));
+	}
+	ifile.close();
+	return types;
 }
