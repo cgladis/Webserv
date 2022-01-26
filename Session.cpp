@@ -92,8 +92,9 @@ void Session::initializeAndCheckData() {
 	std::string url = header.at("Path:");
 	std::string toParse;
 	mimeTypes = getTypesFromFile("www/mimeTypes.txt");
-	if (url.find('?') != 0 && header.at("Method:") == "GET") {
-        argsForCgiString = url.substr(url.find('?') + 1);
+    int index = url.find('?');
+    if (index > 0 && header.at("Method:") == "GET") {
+        argsForCgiString = url.substr(index + 1);
 //		argsForCgi = getArgsFromEncodedString(toParse);
 	}
 	else if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
