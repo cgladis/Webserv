@@ -92,7 +92,11 @@ void Session::initializeAndCheckData() {
 	std::string url = header.at("Path:");
 	std::string toParse;
 	mimeTypes = getTypesFromFile("www/mimeTypes.txt");
-	if (url.find('?') != 0 && header.at("Method:") == "GET") {
+
+	if (url.find('?') == url.size() - 1)
+		url.pop_back();
+	if (url.find('?') <= 0 && header.at("Method:") == "GET") {
+
         argsForCgiString = url.substr(url.find('?') + 1);
 //		argsForCgi = getArgsFromEncodedString(toParse);
 	}
@@ -373,7 +377,7 @@ void Session::sendAnswer(char **env) {
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
 	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
-			  && (header.at("Method:") == "POST")
+			  && (header.at("Method:") == "POST" || header.at("Method:") == "GET")
 			  && access(path.c_str(), 2) == 0) {
 		handleAsCGI(env);
 	}
