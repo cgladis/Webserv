@@ -93,7 +93,7 @@ void Session::initializeAndCheckData() {
 	std::string toParse;
 	mimeTypes = getTypesFromFile("www/mimeTypes.txt");
 	if (url.find('?') != 0 && header.at("Method:") == "GET") {
-        argsForCgi = url.substr(url.find('?') + 1);
+        argsForCgiString = url.substr(url.find('?') + 1);
 //		argsForCgi = getArgsFromEncodedString(toParse);
 	}
 	else if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
@@ -130,7 +130,6 @@ void Session::getRequest(const AllConfigs &configs) {
 		recv(fd, &buff, 1, 0);
 		buff[1] = 0;
 		request.append(buff);
-		std::cout << C_GREEN << buff << C_WHITE;
 		return;
 	}
 
@@ -142,7 +141,6 @@ void Session::getRequest(const AllConfigs &configs) {
 		recv(fd, &buff, 1, 0);
 		char extraBuff[contentLength + 2];
 		recv(fd, &extraBuff, contentLength, 0);
-		std::cout << C_GREEN << extraBuff << C_WHITE << std::endl;
 		extraBuff[contentLength] = 0;
 		request.append("\n").append(extraBuff);
 		fileText.append(extraBuff);
@@ -336,7 +334,7 @@ void Session::handleAsCGI(char **env) {
     // config - конфиг, с которым мы работаем на время текущего соединения
     // location - соответственно location, с которым мы работаем
 
-	StringArray cgi_env_map=cgi_env(header, path, config, argsForCgi, env);
+	StringArray cgi_env_map = cgi_env(header, path, config, argsForCgiString, env);
     std::cout << cgi_env_map << std::endl;
 
     std::stringstream response_body_stream;
@@ -380,13 +378,13 @@ void Session::sendAnswer(char **env) {
 		handleAsCGI(env);
 	}
 	else if (header.at("Method:") == "POST")
-		handlePostRequest();
+		handlePostRequest(env);
 	else if (header.at("Method:") == "PUT")
 		handlePutRequest();
 	else if (header.at("Method:") == "DELETE")
 		handleDeleteRequest();
 	else
-		handleGetRequest();
+		handleGetRequest(env);
 }
 
 bool Session::areRespondReady() const {
@@ -424,7 +422,7 @@ Session &Session::operator=(const Session &oth) {
 
 
 
-void Session::handlePostRequest() {
+void Session::handlePostRequest(char **env) {
 	std::ofstream ofile;
 	std::string fileName;
 	std::string fileBody;
@@ -451,7 +449,7 @@ void Session::handlePostRequest() {
 		}
 		ofile.close();
 	}
-	handleGetRequest();
+	handleGetRequest(env);
 }
 
 void Session::handleDeleteRequest() {
@@ -469,7 +467,7 @@ void Session::handlePutRequest() {
 	makeAndSendResponse(fd, std::to_string(fileText.size()));
 }
 
-void Session::handleGetRequest() {
+void Session::handleGetRequest(char **env) {
 	struct stat st = {};
 	stat(path.c_str(), &st);
 	if (S_ISREG(st.st_mode))
@@ -484,7 +482,7 @@ void Session::handleGetRequest() {
 		} else if (!location.getExec().empty()) {
 			path.append("/" + location.getExec());
 			fixPath(path);
-			handleAsCGI();
+			handleAsCGI(env);
 		}
 		else
 			throw ErrorException(500);

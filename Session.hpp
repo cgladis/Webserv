@@ -47,10 +47,9 @@ public:
 	void errorPageHandle(unsigned int);
     int get_fd() const;
     bool areRespondReady() const;
-	void handleAsCGI();
-	void handlePostRequest();
+	void handlePostRequest(char **);
 	void handlePutRequest();
-	void handleGetRequest();
+	void handleGetRequest(char **);
 	void handleAsCGI(char **env);
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);
@@ -67,7 +66,7 @@ private:
 	std::map<std::string, std::string> header;
 	std::map<std::string, std::string> argsForCgi;
 	std::map<std::string, std::string> mimeTypes;
-    std::string argsForCgi;
+    std::string argsForCgiString;
 	std::string uploadedFilename;
 	std::string fileText;
 	bool isChunked;
