@@ -12,7 +12,8 @@ FDSet::FDSet():max_fd(0) {
 }
 
 void FDSet::addWriteFD(int fd) {
-    FD_SET(fd, &writeFds);
+
+//    FD_SET(fd, &writeFds);
     arrayWriteFds.push_back(fd);
 
     if (fd > max_fd) max_fd = fd;
@@ -20,7 +21,7 @@ void FDSet::addWriteFD(int fd) {
 
 void FDSet::addReadFD(int fd) {
 
-    FD_SET(fd, &readFds);
+//    FD_SET(fd, &readFds);
     arrayReadFds.push_back(fd);
 
     if (fd > max_fd) max_fd = fd;
@@ -29,8 +30,9 @@ void FDSet::addReadFD(int fd) {
 
 void FDSet::addFD(int fd) {
     //add writeFD and readFD
-    FD_SET(fd, &readFds);
-    FD_SET(fd, &writeFds);
+
+//    FD_SET(fd, &readFds);
+//    FD_SET(fd, &writeFds);
     arrayWriteFds.push_back(fd);
     arrayReadFds.push_back(fd);
 

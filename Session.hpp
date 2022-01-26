@@ -25,6 +25,8 @@
 #define C_WHITE "\033[0m"
 #define C_BLUE "\033[34m"
 #define C_YELLOW "\033[33m"
+#define C_GREEN "\033[32m"
+#define C_MAGENTA "\033[35m"
 
 #define READING_BUFF 100
 
@@ -40,7 +42,7 @@ public:
 	void parseHeader();
     void getRequest(const AllConfigs &configs);
 	Location getMyLocation(const std::vector<Location> &locations, const std::string &url);
-	void sendAnswer();
+	void sendAnswer(char **env);
 	void handleAsDir();
 	void errorPageHandle(unsigned int);
     int get_fd() const;
@@ -49,6 +51,7 @@ public:
 	void handlePostRequest();
 	void handlePutRequest();
 	void handleGetRequest();
+	void handleAsCGI(char **env);
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);
 	void initializeAndCheckData();
@@ -64,6 +67,7 @@ private:
 	std::map<std::string, std::string> header;
 	std::map<std::string, std::string> argsForCgi;
 	std::map<std::string, std::string> mimeTypes;
+    std::string argsForCgi;
 	std::string uploadedFilename;
 	std::string fileText;
 	bool isChunked;

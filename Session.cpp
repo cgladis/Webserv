@@ -47,6 +47,7 @@ void Session::parseHeader() {
 	if (header.at("HttpVersion:") != "HTTP/1.1")
 		throw ErrorException(505);
 	recv(fd, nullptr, 1, 0);
+
 }
 
 int readLength(int fd) {
@@ -92,9 +93,8 @@ void Session::initializeAndCheckData() {
 	std::string toParse;
 	mimeTypes = getTypesFromFile("www/mimeTypes.txt");
 	if (url.find('?') != 0 && header.at("Method:") == "GET") {
-		toParse = url.substr(url.find('?') + 1);
-		argsForCgi = getArgsFromEncodedString(toParse);
-		url = url.substr(0, url.find('?'));
+        argsForCgi = url.substr(url.find('?') + 1);
+//		argsForCgi = getArgsFromEncodedString(toParse);
 	}
 	else if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
 		argsForCgi = getArgsFromEncodedString(fileText);
@@ -120,6 +120,7 @@ void Session::getRequest(const AllConfigs &configs) {
 		config = configs.getRightConfig(header.at("Host:"), sesSocket);
 		if (config.getIsReturn()) {
 			respondReady = true;
+			std::cout << C_MAGENTA << "1 respondReady = true" << C_WHITE << std::endl;
 			return;
 		}
 		initializeAndCheckData();
@@ -129,6 +130,7 @@ void Session::getRequest(const AllConfigs &configs) {
 		recv(fd, &buff, 1, 0);
 		buff[1] = 0;
 		request.append(buff);
+		std::cout << C_GREEN << buff << C_WHITE;
 		return;
 	}
 
@@ -140,13 +142,17 @@ void Session::getRequest(const AllConfigs &configs) {
 		recv(fd, &buff, 1, 0);
 		char extraBuff[contentLength + 2];
 		recv(fd, &extraBuff, contentLength, 0);
+		std::cout << C_GREEN << extraBuff << C_WHITE << std::endl;
 		extraBuff[contentLength] = 0;
 		request.append("\n").append(extraBuff);
 		fileText.append(extraBuff);
 		respondReady = true;
+		std::cout << C_MAGENTA << "2 respondReady = true" << C_WHITE << std::endl;
 	}
-	else
+	else {
 		respondReady = true;
+		std::cout << C_MAGENTA << "3 respondReady = true" << C_WHITE << std::endl;
+	}
 }
 
 Location Session::getMyLocation(const std::vector<Location> &locations, const std::string &url) {
@@ -283,37 +289,54 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 	return response_body.str();
 }
 
-StringArray cgi_env(std::map<std::string, std::string> header, std::string path, Config conf)
+StringArray cgi_env(std::map<std::string, std::string> header, std::string path, Config conf, std::string argsForCgi, char **env)
 {
+	//TODO in std::map header first element = ""
     StringArray	tmp;
-    tmp.addString("AUTH_TYPE=BASIC");
-//    tmp.push_back("CONTENT_LENGTH=" + header.at("CONTENT_LENGTH"));
-//    tmp.push_back("CONTENT_TYPE=" + header.at("CONTENT_TYPE"));
-    tmp.addString("GATEWAY_INTERFACE=CGI/1.1");
-//    tmp.push_back("PATH_INFO=" + header.at("PATH_INFO"));
-//    tmp.push_back("PATH_TRANSLATED=" + header.at("PATH_TRANSLATED"));
-//    tmp.push_back("QUERY_STRING=" + header.at("QUERY_STRING"));
-//    tmp.push_back("REMOTE_ADDR=" + header.at("REMOTE_ADDR")); //ip
-//    tmp.push_back("REMOTE_IDENT=." + header.at("REMOTE_IDENT")); //host
-    tmp.addString("REMOTE_USER=");
-    tmp.addString("REQUEST_METHOD=GET");
-//    tmp.push_back("REQUEST_URI=" + header.at("REQUEST_URI"));
-    tmp.addString("SCRIPT_NAME=" + path);
-//    tmp.push_back("SERVER_NAME=" + header.at("SERVER_NAME"));
-//    tmp.push_back("SERVER_PORT=" +  header.at("SERVER_PORT"));
-//    tmp.push_back("SERVER_PROTOCOL=" + header.at("SERVER_PROTOCOL")); //version
-    tmp.addString("SERVER_SOFTWARE=webserver");
+    std::string str;
+
+	tmp.addString("Auth_Type=Basic");
+    tmp.addString("Gateway_Interface=CGI/1.1");
+    tmp.addString("Remote_User=");
+    tmp.addString("Script_Name=" + path);
+    tmp.addString("Server_Software=webserver");
+    tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
+
+    // Добавление переменных из header c префиксом HTTP
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
     for (; begin != end; ++begin)
         tmp.addString("HTTP_" + begin->first + "=" + begin->second);
+
+    // Добавление внешних переменных окружения
+    while (env && *env)
+    {
+        str = static_cast<std::string>(*env);
+        unsigned long ind = str.find('=');
+        if (ind != 0)
+            tmp.addString(str);
+        env++;
+    }
+
+    // Добавление аргументов при GET запросе
+    if (header.at("Method:") == "GET")
+        tmp.addString("QUERY_STRING=" + argsForCgi);
+
     return tmp;
     (void )conf;
 }
 
 //делает body ответа и отправяет на сокет
-void Session::handleAsCGI() {
-    StringArray cgi_env_map=cgi_env(header, path, config);
+void Session::handleAsCGI(char **env) {
 
+    // переменные класса
+    // fd - фд сессии
+    // path - путь к скрипту (.py)
+    // header - мапа с данными из хедера запроса, чтобы получить данные, используй ее вот так header.at("Host:")
+    // посмотреть содержимое мапы - либо через дебагер, либо разкоментить блок в SendAnswer
+    // config - конфиг, с которым мы работаем на время текущего соединения
+    // location - соответственно location, с которым мы работаем
+
+	StringArray cgi_env_map=cgi_env(header, path, config, argsForCgi, env);
     std::cout << cgi_env_map << std::endl;
 
     std::stringstream response_body_stream;
@@ -338,25 +361,23 @@ void Session::handleAsCGI() {
         data_buf[data_length] = '\0';
         response_body_stream << data_buf;
     }
+    close(cgi_fd[0]);
+
     std::string response_header = response_body_stream.str().substr(0,response_body_stream.str().find("\n\n"));
     std::string response_body = response_body_stream.str().substr(response_body_stream.str().find("\n\n")+2);
-//    if (r > 0)
-//        response_body_stream << data_buf;
-//    else
-//        throw std::runtime_error("Reading error handleAsCGI");
-    close(cgi_fd[0]);
+
 
 	makeAndSendResponse(fd, response_body, 200, response_header);
 }
 
-void Session::sendAnswer() {
+void Session::sendAnswer(char **env) {
 	if (config.getIsReturn())
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
 	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
 			  && (header.at("Method:") == "POST")
 			  && access(path.c_str(), 2) == 0) {
-		handleAsCGI();
+		handleAsCGI(env);
 	}
 	else if (header.at("Method:") == "POST")
 		handlePostRequest();

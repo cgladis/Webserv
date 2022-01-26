@@ -17,7 +17,7 @@ public:
     Server();
 
     void addServers(const AllConfigs&);
-    void run(const AllConfigs &);
+    void run(const AllConfigs &, char **env);
     void connect(Socket &currentSocket);
 	void finishSession(size_t i);
 
