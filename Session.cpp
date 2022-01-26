@@ -89,10 +89,10 @@ void Session::parseAsChunked() {
 
 void Session::initializeAndCheckData() {
 	std::string url = header.at("Path:");
-	std::string toParse;
+//	std::string toParse;
 	if (url.find('?') != 0 && header.at("Method:") == "GET") {
-		toParse = url.substr(url.find('?') + 1);
-		argsForCgi = getArgsFromEncodedString(toParse);
+        argsForCgi = url.substr(url.find('?') + 1);
+//		argsForCgi = getArgsFromEncodedString(toParse);
 	}
 	location = getMyLocation(config.getLocations(), url);
 	uploadedFilename = location.getUploadStore() + "/" + url.substr(location.getLocationName().size());
@@ -270,33 +270,37 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 	return response_body.str();
 }
 
-StringArray cgi_env(std::map<std::string, std::string> header, std::string path, Config conf)
+StringArray cgi_env(std::map<std::string, std::string> header, std::string path, Config conf, std::string argsForCgi, char **env)
 {
 	//TODO in std::map header first element = ""
     StringArray	tmp;
-    tmp.addString("Accept-Encoding=" + header.at("Accept-Encoding:"));
-	tmp.addString("Accept-Language=" + header.at("Accept-Language:"));
-	tmp.addString("Accept=" + header.at("Accept:"));
-    tmp.addString("Connection=" + header.at("Connection:"));
-    tmp.addString("Cookie=" + header.at("Cookie:"));
-    tmp.addString("DNT=" + header.at("DNT:"));
-    tmp.addString("Host=" + header.at("Host:"));
-    tmp.addString("HttpVersion=" + header.at("HttpVersion:"));
-    tmp.addString("Method=" + header.at("Method:"));
-	tmp.addString("Path=" + header.at("Path:"));
-	tmp.addString("Sec-Fetch-Dest=" + header.at("Sec-Fetch-Dest:"));
-	tmp.addString("Sec-Fetch-Mode=" + header.at("Sec-Fetch-Mode:"));
-	tmp.addString("Sec-Fetch-Site=" + header.at("Sec-Fetch-Site:"));
-	tmp.addString("Upgrade-Insecure-Requests=" + header.at("Upgrade-Insecure-Requests:"));
-	tmp.addString("User-Agent=" + header.at("User-Agent:"));
+    std::string str;
+
 	tmp.addString("Auth_Type=Basic");
     tmp.addString("Gateway_Interface=CGI/1.1");
     tmp.addString("Remote_User=");
     tmp.addString("Script_Name=" + path);
     tmp.addString("Server_Software=webserver");
+
+    // Добавление переменных из header c префиксом HTTP
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
     for (; begin != end; ++begin)
         tmp.addString("HTTP_" + begin->first + "=" + begin->second);
+
+    // Добавление внешних переменных окружения
+    while (env && *env)
+    {
+        str = static_cast<std::string>(*env);
+        unsigned long ind = str.find('=');
+        if (ind != 0)
+            tmp.addString(str);
+        env++;
+    }
+
+    // Добавление аргументов при GET запросе
+    if (header.at("Method:") == "GET")
+        tmp.addString("QUERY_STRING=" + argsForCgi);
+
     return tmp;
     (void )conf;
 }
@@ -312,18 +316,7 @@ void Session::handleAsCGI(char **env) {
     // config - конфиг, с которым мы работаем на время текущего соединения
     // location - соответственно location, с которым мы работаем
 
-	std::string str;
-	StringArray cgi_env_map=cgi_env(header, path, config);
-
-	while (env && *env)
-	{
-		str = static_cast<std::string>(*env);
-		unsigned long ind = str.find('=');
-		if (ind != 0)
-			cgi_env_map.addString(str);
-		env++;
-	}
-
+	StringArray cgi_env_map=cgi_env(header, path, config, argsForCgi, env);
     std::cout << cgi_env_map << std::endl;
     std::stringstream response_body_stream;
 
@@ -362,7 +355,8 @@ void Session::sendAnswer(char **env) {
 	if (config.getIsReturn())
 		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
 	if (header.at("Method:") == "POST" && header.at("Content-Type:") == "application/x-www-form-urlencoded\r")
-		argsForCgi = getArgsFromEncodedString(fileText);
+		argsForCgi = fileText;
+//		argsForCgi = getArgsFromEncodedString(fileText);
 
 	if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")

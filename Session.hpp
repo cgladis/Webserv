@@ -60,7 +60,8 @@ private:
 	Location location;
 	Socket sesSocket;
 	std::map<std::string, std::string> header;
-	std::map<std::string, std::string> argsForCgi;
+//	std::map<std::string, std::string> argsForCgi;
+    std::string argsForCgi;
 	std::string uploadedFilename;
 	std::string fileText;
 	bool isChunked;
