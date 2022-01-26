@@ -41,33 +41,28 @@ void Server::addServers(const AllConfigs &configs) {
 //Открывает бесконечный цикл опроса наших сокетов и работу с ними
 void Server::run(const AllConfigs &configs, char **env) {
     int resSelect;
-	bool needToRestart;
 	int g = 0;
 
 	while (!exit) {
 		g++;
-		needToRestart = false;
 		resSelect = fds.select();
 
 		if (resSelect <= 0) {
 			handleSelectError(resSelect);
 			continue;
 		}
-
 		for (size_t i = 0; i < listeningSockets.size(); ++i) {
 			if (fds.isSetReadFD(listeningSockets[i].get_fd())) {
 				connect(listeningSockets[i]);
-				needToRestart = true;
 			}
 		}
-		if (needToRestart)
-			continue;
 		for (size_t i = 0; i < sessions.size(); ++i) {
 			try {
 				if (fds.isSetReadFD(sessions[i].get_fd())) {
 					sessions[i].getRequest(configs);
 				}
 				if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
+
 					sessions[i].sendAnswer(env);
 					finishSession(i);
 					g = 0;

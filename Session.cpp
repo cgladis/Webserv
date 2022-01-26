@@ -113,7 +113,7 @@ void Session::getRequest(const AllConfigs &configs) {
 		config = configs.getRightConfig(header.at("Host:"), sesSocket);
 		if (config.getIsReturn()) {
 			respondReady = true;
-			std::cout << C_MAGENTA << "respondReady = true" << C_WHITE << std::endl;
+			std::cout << C_MAGENTA << "1 respondReady = true" << C_WHITE << std::endl;
 			return;
 		}
 		initializeAndCheckData();
@@ -140,11 +140,11 @@ void Session::getRequest(const AllConfigs &configs) {
 		request.append("\n").append(extraBuff);
 		fileText.append(extraBuff);
 		respondReady = true;
-		std::cout << C_MAGENTA << "respondReady = true" << C_WHITE << std::endl;
+		std::cout << C_MAGENTA << "2 respondReady = true" << C_WHITE << std::endl;
 	}
 	else{
 		respondReady = true;
-	std::cout << C_MAGENTA << "respondReady = true" << C_WHITE << std::endl;}
+	std::cout << C_MAGENTA << "3 respondReady = true" << C_WHITE << std::endl;}
 }
 
 Location Session::getMyLocation(const std::vector<Location> &locations, const std::string &url) {
