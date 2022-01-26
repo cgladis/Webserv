@@ -195,27 +195,26 @@ void Session::errorPageHandle(unsigned int code) {
 }
 
 void Session::makeAndSendResponse(int fd, const std::string& response_body, unsigned int code, const std::string
-&status) {
+&status, std::string response_header, bool nobody) {
 	std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
 	std::cout << C_RED << request << C_WHITE << std::endl;
 	std::stringstream response;
 	response << "HTTP/1.1 " << code << " " << status << "\n";
-	if (code == 301)
-		response << "Location: http://" << response_body << "\n"
-				<< "\n"
-				<< "";
-	else if (code == 201)
-		response << "Content-Location: /" << path << "\n"
-				 << "\n"
-				 << "";
+	if (code == 301) {
+        response << "Location: http://" << response_body << std::endl;
+        nobody = true;
+    }
+	else if (code == 201) {
+        response << "Content-Location: /" << path << std::endl;
+        nobody = true;
+    }
 	else {
 		response << "Connection: close" << "\n";
 		if (path.substr(path.size() - 4) == ".ico")
 			response << "Content-Type: image/gif\n";
-		response << "Content-Length: " << response_body.length() << "\n"
-				 << "\n"
-				 << response_body;
+		response << "Content-Length: " << response_body.length() << std::endl;
 	}
+    response << response_header << "\n\n" << (nobody ? "": response_body);
     std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
     std::cout << C_BLUE << response.str() << C_WHITE << std::endl;
 	ssize_t length = send(fd, response.str().c_str(), response.str().length(), 0);
@@ -326,7 +325,7 @@ void Session::handleAsCGI(char **env) {
 	}
 
     std::cout << cgi_env_map << std::endl;
-    std::stringstream response_body;
+    std::stringstream response_body_stream;
 
 //    std::cout << C_YELLOW << "ЗАШЕЛ"  << C_WHITE <<std::endl;
     std::ifstream fin(path);
@@ -336,7 +335,7 @@ void Session::handleAsCGI(char **env) {
     pid_t pid = fork();
     if (pid == 0){
         dup2(cgi_fd[1], 1);
-        execve(path.c_str(), reinterpret_cast<char *const *>(fileText.c_str()), cgi_env_map.c_Arr());
+        execve(path.c_str(), NULL, cgi_env_map.c_Arr());
     }
     close(cgi_fd[1]);
     int exit_code;
@@ -346,16 +345,17 @@ void Session::handleAsCGI(char **env) {
     while ((data_length = read(cgi_fd[0], &data_buf, READING_BUFF)) > 0) {
 //        std::cout << data_buf << " : " << data_length << std::endl;
         data_buf[data_length] = '\0';
-        response_body << data_buf;
+        response_body_stream << data_buf;
     }
-
+    std::string response_header = response_body_stream.str().substr(0,response_body_stream.str().find("\n\n"));
+    std::string response_body = response_body_stream.str().substr(response_body_stream.str().find("\n\n")+2);
 //    if (r > 0)
-//        response_body << data_buf;
+//        response_body_stream << data_buf;
 //    else
 //        throw std::runtime_error("Reading error handleAsCGI");
     close(cgi_fd[0]);
 
-	makeAndSendResponse(fd, response_body.str(), 200);
+	makeAndSendResponse(fd, response_body, 200, response_header);
 }
 
 void Session::sendAnswer(char **env) {

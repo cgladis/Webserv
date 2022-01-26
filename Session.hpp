@@ -19,6 +19,7 @@
 #include <map>
 #include <sys/stat.h>
 #include <cstdio>
+#include <string>
 #include "StringArray.hpp"
 #define C_RED "\033[31m"
 #define C_WHITE "\033[0m"
@@ -34,7 +35,7 @@ public:
     ~Session();
 
 	void makeAndSendResponse(int fd, const std::string& response_body, unsigned int code = 200, const std::string
-	&status = "OK");
+	&status = "OK", std::string response_header = "", bool nobody= false);
 	void parseAsChunked();
 	void parseHeader();
     void getRequest(const AllConfigs &configs);

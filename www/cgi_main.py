@@ -22,18 +22,17 @@ print()
 'TO BODY'
 
 print("""
-    <html lang="en">
-    <head>
-        <link rel="shortcut icon" href="../images/ico_for_py.png">
-        <style>
-            body {""")
-print("""  
-                background: #333333 url({}); /* Цвет фона и путь к файлу */
-                color: #f5f5f7; /* Цвет текста */""".format('../images/bg_1.jpeg'))
-print("""
-            }
-        </style>
-    </head>""")
+<html lang="en">
+<head>
+    <link rel="shortcut icon" href="../images/ico_for_py.png">
+    <style>
+        body {{
+            background: #333333 url({}); /* Цвет фона и путь к файлу */
+            color: #f5f5f7; /* Цвет текста */
+        }}
+    </style>
+</head>""".format(''))
+
 # print()
 print('<body>')
 print('<font size=+10>Environment</font><br>')
