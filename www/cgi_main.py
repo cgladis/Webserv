@@ -59,18 +59,18 @@ if os.environ.get("REQUEST_METHOD") == 'GET':
             </form>""".format(cookie_first_name, cookie_second_name))
 elif os.environ.get("REQUEST_METHOD") == 'POST':
 
-    print('<font size=+5>Thank you for your answers</font><br>')
+    print('<br><font size=+5>Thank you for your answers</font><br>')
     print("<b>{:<20}</b>: {}<br>".format("Your first name", first_name))
     print("<b>{:<20}</b>: {}<br>".format("Your second name", second_name))
     print("""
-            <form action="" method="get">
+            <form action="cgi_main.py" method="get">
                 <p>
                     <input type="submit">
                 </p>
             </form>""")
 
 else:
-    print('<font size=+5>I don\'t know this method', os.environ.get("REQUEST_METHOD"), '</font><br>')
+    print('<br><font size=+5>I don\'t know this method', os.environ.get("REQUEST_METHOD"), '</font><br>')
     print("""
             <form action="" method="get">
                 <p>

@@ -74,7 +74,8 @@ private:
 	bool isHeaderRead;
 	bool isSGI;
 	long bodySum;
-    int cgi_fd[2];
+    int cgi_fd_in[2];
+    int cgi_fd_out[2];
 };
 
 

@@ -83,17 +83,24 @@ AllConfigs::AllConfigs(const std::string &filename):std::vector<Config>(),
 //    std::GetNextServer(&ifile);
 }
 
-std::string AllConfigs::nextWord(std::string &line) {
+//Получает следующее "слово"
+//пробел и таб вначале строки выкидываются (first_symbols)
+//return_as_one_symbol - символы здесь возвращает как отдельное слово
+//stop_symbols - символы которые говорят нам о том, что слово закончилось
+std::string AllConfigs::nextWord(std::string &line,
+                                 const std::string& first_symbols,
+                                 const std::string& return_as_one_symbol,
+                                 const std::string& stop_symbols) {
 
-    size_t start_pos = line.find_first_not_of(" \t");
+    size_t start_pos = line.find_first_not_of(first_symbols); //first symbols
     line.erase(0, start_pos);
     std::string firstSimbol = line.substr(0, 1);
-    if (firstSimbol.find_first_of("{};:,") == 0) { //return 1 simbol
+    if (firstSimbol.find_first_of(return_as_one_symbol) == 0) { //return 1 simbol
         std::string word = line.substr(0, 1);
         line.erase(0, word.length());
         return word;
     }
-    size_t end_pos = line.find_first_of(" \t{};:,"); //stop simbol
+    size_t end_pos = line.find_first_of(stop_symbols); //stop simbol
     std::string word = line.substr(0, end_pos);
     line.erase(0, word.length());
     return word;
