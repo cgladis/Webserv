@@ -232,7 +232,7 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
 		std::map<std::string, std::string>::iterator it = mimeTypes.find(key);
 		if (it != mimeTypes.end())
 			response << "Content-Type: " << it->second << "\n";
-		response << "Content-Length: " << response_body.length();
+		response << "Content-Length: " << response_body.length() << "\n";
 	}
     response << response_header << "\n\n" << (nobody ? "": response_body);
 
@@ -369,7 +369,7 @@ void Session::handleAsCGI(char **env) {
     std::string response_body = response_body_stream.str().substr(response_body_stream.str().find("\n\n")+2);
 
 
-	makeAndSendResponse(fd, response_body, 200, response_header);
+	makeAndSendResponse(fd, response_body, 200, "OK", response_header);
 }
 
 void Session::sendAnswer(char **env) {
