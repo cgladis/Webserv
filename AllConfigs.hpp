@@ -25,7 +25,10 @@ private:
 	int count;
 	std::vector<std::string> uniqeIpPort;
 	std::vector<Config> configsWithDefaultSerName;
-    std::string nextWord(std::string&);
+    static std::string nextWord(std::string &line,
+                         const std::string& first_symbols = " \t",
+                         const std::string& return_as_one_symbol = "{};:,",
+                         const std::string& stop_symbols = " \t{};:,");
     void parseListen(std::string &line, int fileLine);
     void parseServerName(std::string &line, int fileLine);
     void parseErrorPage(std::string &line, int fileLine);

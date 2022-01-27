@@ -347,23 +347,69 @@ void Session::handleAsCGI(char **env) {
     std::ifstream fin(path);
     if (!fin.is_open())
         throw std::runtime_error("file wasn't opened");
-    pipe(cgi_fd);
-    pid_t pid = fork();
-    if (pid == 0){
-        dup2(cgi_fd[1], 1);
-        execve(path.c_str(), NULL, cgi_env_map.c_Arr());
-    }
-    close(cgi_fd[1]);
-    int exit_code;
-    waitpid(pid, &exit_code, 0);
-    char data_buf[READING_BUFF + 1];
-    ssize_t data_length;
-    while ((data_length = read(cgi_fd[0], &data_buf, READING_BUFF)) > 0) {
+
+    if (header.at("Method:") == "POST"){
+        pipe(cgi_fd_in);
+        pipe(cgi_fd_out);
+        pid_t pid = fork();
+        if (pid == 0){
+            std::cout << C_GREEN << "before execve" <<  C_WHITE << std::endl;
+            close(cgi_fd_out[1]);
+            dup2(cgi_fd_out[0], 0);
+            dup2(cgi_fd_in[1], 1);
+            execve(path.c_str(), NULL, cgi_env_map.c_Arr());
+            std::cout << C_GREEN << "after execve" <<  C_WHITE << std::endl;
+            close(cgi_fd_out[0]);
+            close(cgi_fd_in[0]);
+            close(cgi_fd_in[1]);
+            exit(400);
+        }
+        close(cgi_fd_in[1]);
+        write(cgi_fd_out[1], fileText.c_str(), fileText.size());
+        close(cgi_fd_out[0]);
+        close(cgi_fd_out[1]);
+        int exit_code;
+        std::cout << C_GREEN << "before wait" <<  C_WHITE << std::endl;
+        waitpid(pid, &exit_code, 0);
+        std::cout << C_GREEN << "after wait" << C_WHITE << std::endl;
+        char data_buf[READING_BUFF + 1];
+        ssize_t data_length;
+        while ((data_length = read(cgi_fd_in[0], &data_buf, READING_BUFF)) > 0) {
 //        std::cout << data_buf << " : " << data_length << std::endl;
-        data_buf[data_length] = '\0';
-        response_body_stream << data_buf;
+            data_buf[data_length] = '\0';
+            response_body_stream << data_buf;
+        }
+        close(cgi_fd_in[0]);
     }
-    close(cgi_fd[0]);
+    else if (header.at("Method:") == "GET"){
+        pipe(cgi_fd_in);
+        pid_t pid = fork();
+        if (pid == 0){
+            std::cout << C_GREEN << "before execve" <<  C_WHITE << std::endl;
+            dup2(cgi_fd_in[1], 1);
+            execve(path.c_str(), NULL, cgi_env_map.c_Arr());
+            std::cout << C_GREEN << "after execve" <<  C_WHITE << std::endl;
+            close(cgi_fd_in[0]);
+            close(cgi_fd_in[1]);
+            exit(400);
+        }
+        close(cgi_fd_in[1]);
+        int exit_code;
+        std::cout << C_GREEN << "before wait" <<  C_WHITE << std::endl;
+        waitpid(pid, &exit_code, 0);
+        std::cout << C_GREEN << "after wait" << C_WHITE << std::endl;
+        char data_buf[READING_BUFF + 1];
+        ssize_t data_length;
+        while ((data_length = read(cgi_fd_in[0], &data_buf, READING_BUFF)) > 0) {
+//        std::cout << data_buf << " : " << data_length << std::endl;
+            data_buf[data_length] = '\0';
+            response_body_stream << data_buf;
+        }
+        close(cgi_fd_in[0]);
+    }
+    else{
+        throw std::runtime_error("can't execute this method for cgi");
+    }
 
     std::string response_header = response_body_stream.str().substr(0,response_body_stream.str().find("\n\n"));
     std::string response_body = response_body_stream.str().substr(response_body_stream.str().find("\n\n")+2);
@@ -373,22 +419,27 @@ void Session::handleAsCGI(char **env) {
 }
 
 void Session::sendAnswer(char **env) {
-	if (config.getIsReturn())
-		makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");
+	if (config.getIsReturn()) {
+        std::cout << C_GREEN << "sendAnswer 1" << C_WHITE << std::endl;
+        makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");}
 	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
 			  && (header.at("Method:") == "POST" || header.at("Method:") == "GET")
 			  && access(path.c_str(), 2) == 0) {
-		handleAsCGI(env);
-	}
-	else if (header.at("Method:") == "POST")
-		handlePostRequest(env);
-	else if (header.at("Method:") == "PUT")
-		handlePutRequest();
-	else if (header.at("Method:") == "DELETE")
-		handleDeleteRequest();
-	else
-		handleGetRequest(env);
+        std::cout << C_GREEN << "sendAnswer 2" << C_WHITE << std::endl;
+		handleAsCGI(env);}
+	else if (header.at("Method:") == "POST") {
+        std::cout << C_GREEN << "sendAnswer 3" << C_WHITE << std::endl;
+        handlePostRequest(env);}
+	else if (header.at("Method:") == "PUT"){
+        std::cout << C_GREEN << "sendAnswer 4" << C_WHITE << std::endl;
+		handlePutRequest();}
+	else if (header.at("Method:") == "DELETE"){
+        std::cout << C_GREEN << "sendAnswer 5" << C_WHITE << std::endl;
+		handleDeleteRequest();}
+	else{
+        std::cout << C_GREEN << "sendAnswer 6" << C_WHITE << std::endl;
+		handleGetRequest(env);}
 }
 
 bool Session::areRespondReady() const {

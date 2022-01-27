@@ -62,6 +62,7 @@ void Server::run(const AllConfigs &configs, char **env) {
 					sessions[i].getRequest(configs);
 				}
 				if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
+                    std::cout << "sessions[i].areRespondReady()" << std::endl;
 
 					sessions[i].sendAnswer(env);
 					finishSession(i);
