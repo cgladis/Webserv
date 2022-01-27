@@ -303,6 +303,7 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     tmp.addString("Script_Name=" + path);
     tmp.addString("Server_Software=webserver");
     tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
+    tmp.addString("HTTP_COOKIE=" + header.at("Cookie:"));
 
     // Добавление переменных из header c префиксом HTTP
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
