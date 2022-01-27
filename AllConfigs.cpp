@@ -237,7 +237,7 @@ void AllConfigs::parseIndex(std::string &line, int fileLine) {
                                  + std::to_string(fileLine));
 }
 
-void AllConfigs::findIfSamePort() {
+void AllConfigs::makeUniqueIpPortArray() {
 	Config conf1;
 	std::string ipPort;
 	for (size_t i = 0; i < this->size(); ++i) {
@@ -246,7 +246,7 @@ void AllConfigs::findIfSamePort() {
 		if (std::find(uniqeIpPort.begin(), uniqeIpPort.end(), ipPort) == uniqeIpPort.end())
 			uniqeIpPort.push_back(ipPort);
 		else
-			throw std::runtime_error("same ports(");
+			continue;
 	}
 }
 

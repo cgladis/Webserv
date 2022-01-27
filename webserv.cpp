@@ -13,7 +13,7 @@ int main(int ac, char **av, char **env){
 
 	Server server;
 	try {
-		configs.findIfSamePort();
+		configs.makeUniqueIpPortArray();
 		server.addServers(configs);
 		server.run(configs, env);
 	}
