@@ -423,7 +423,7 @@ void Session::sendAnswer(char **env) {
 	if (config.getIsReturn()) {
         std::cout << C_GREEN << "sendAnswer 1" << C_WHITE << std::endl;
         makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");}
-	else if ((path.substr(path.size() - 4) == ".bla" || path.substr(path.size() - 3) == ".py"
+	else if ((path.substr(path.size() - 3) == ".py"
 			  || path.substr(path.size() - 4) == ".php" || path.substr(path.size() - 3) == ".sh")
 			  && (header.at("Method:") == "POST" || header.at("Method:") == "GET")
 			  && access(path.c_str(), 2) == 0) {
