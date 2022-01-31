@@ -14,6 +14,12 @@ body {
 
 }
 
+header{
+    /*position: fixed;*/
+    /*left: 0;*/
+    /*top: 0;*/
+}
+
 .tab {
     overflow: hidden;
     border: 1px solid #ccc;
@@ -47,6 +53,12 @@ body {
     padding: 6px 12px;
     border: 1px solid #ccc;
     border-top: none;
+    animation: fadeEffect 1s; /* Fading effect takes 1 second */
+}
+
+@keyframes fadeEffect {
+    from {opacity: 0;}
+    to {opacity: 1;}
 }
 
 button{

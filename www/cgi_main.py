@@ -34,15 +34,15 @@ print("""
 </head>""")
 
 # BODY
-print('<body onload="openTab(event, \'TestPOST\')">')
+print('<body>')
 print("""
     <div class="content">
-        <div class="tab">
+        <header class="tab">
             <button class="tablinks" onclick="openTab(event, 'Environment')">Environment</button>
             <button class="tablinks" onclick="openTab(event, 'ARGV')">ARGV</button>
             <button class="tablinks" onclick="openTab(event, 'Cookies')">Cookies</button>
-            <button class="tablinks" onclick="openTab(event, 'TestPOST')">Test POST request</button>
-        </div>
+            <button class="tablinks" onclick="openTab(event, 'TestPOST')" id="defaultOpen">Test POST request</button>
+        </header>
 """)
 
 print("""
@@ -145,6 +145,10 @@ print("""
                 document.getElementById(tabName).style.display = "block";
                 evt.currentTarget.className += " active";
             }
+            
+            // Get the element with id="defaultOpen" and click on it
+            document.getElementById("defaultOpen").click();
+            
         </script>
         
     </body>
