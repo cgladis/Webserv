@@ -8,8 +8,8 @@ import sys
 import time
 
 form = cgi.FieldStorage()
-first_name = form.getvalue("FIRST_NAME", 'empty')
-second_name = form.getvalue("SECOND_NAME", 'empty')
+first_name = form.getvalue("FIRST_NAME", '')
+second_name = form.getvalue("SECOND_NAME", '')
 # first_name = html.escape(first_name)
 # second_name = html.escape(second_name)
 cookie = http.cookies.SimpleCookie(os.environ.get("HTTP_COOKIE"))
@@ -17,8 +17,8 @@ cookie = http.cookies.SimpleCookie(os.environ.get("HTTP_COOKIE"))
 'TO HEADER'
 
 if os.environ.get("REQUEST_METHOD") == 'POST':
-    print("Set-cookie: FIRST_NAME={}".format(first_name))
-    print("Set-cookie: SECOND_NAME={}".format(second_name))
+    print('Set-cookie: FIRST_NAME="{}"'.format(first_name))
+    print('Set-cookie: SECOND_NAME="{}"'.format(second_name))
 print("Content-type: text/html")
 print()
 
@@ -91,6 +91,7 @@ print("""
 """)
 if os.environ.get("REQUEST_METHOD") == 'GET':
     print("""
+        <div class="form">
             <form action="cgi_main.py" method="post">
                 <div>
                     <label for="FIRST_NAME">First name:</label>
@@ -129,6 +130,7 @@ else:
 
 
 print("""
+        </div>
         </div>
         
         <script>

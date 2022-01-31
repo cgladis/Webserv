@@ -7,7 +7,7 @@ body {
 
 .content{
     width: 800px;
-    align-self: center;
+    margin: auto;
     background: linear-gradient(
             180deg
             ,#359191,#5ab683);
@@ -15,6 +15,9 @@ body {
 }
 
 header{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
     /*position: fixed;*/
     /*left: 0;*/
     /*top: 0;*/
@@ -23,7 +26,8 @@ header{
 .tab {
     overflow: hidden;
     border: 1px solid #ccc;
-    background-color: #f1f1f1;
+    /*background-color: #f1f1f1;*/
+    background-color: #27282c;
 }
 
 /* Style the buttons inside the tab */
@@ -36,16 +40,20 @@ header{
     padding: 14px 16px;
     transition: 0.3s;
     font-size: 17px;
+    color: #ffffff;
+    opacity: 0.6;
 }
 
 /* Change background color of buttons on hover */
 .tab button:hover {
-    background-color: #ddd;
+    /*background-color: #ddd;*/
+    opacity: 1;
 }
 
 /* Create an active/current tablink class */
 .tab button.active {
-    background-color: #ccc;
+    background-color: #197dfe;
+    opacity: 1;
 }
 
 .tabcontent {
@@ -54,6 +62,8 @@ header{
     border: 1px solid #ccc;
     border-top: none;
     animation: fadeEffect 1s; /* Fading effect takes 1 second */
+
+    word-wrap: break-word;
 }
 
 @keyframes fadeEffect {
@@ -76,6 +86,24 @@ input{
     font-size: 18px;
     border-radius: 10px;
     padding: 5px 25px;
-    margin: 10px;
-;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    width: 400px;
+}
+
+.form{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+form{
+    text-align: center;
+}
+
+form div{
+    display: flex;
+    flex-direction: column;
+    text-align: left;
 }
