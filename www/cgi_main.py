@@ -6,6 +6,7 @@ import os
 import sys
 
 import time
+time.sleep(5)
 
 form = cgi.FieldStorage()
 first_name = form.getvalue("FIRST_NAME", '')
