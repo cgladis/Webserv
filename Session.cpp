@@ -448,8 +448,14 @@ void Session::read_cgi() {
     makeAndSendResponse(fd, response_body, 200, "OK", response_header);
 }
 
+void readUslessRest(int fd) {
+	char buff[2];
+	while (recv(fd, &buff, 1, 0) == 1)
+		continue;
+}
 
 void Session::sendAnswer(char **env) {
+	readUslessRest(fd);
 	if (config.getIsReturn()) {
         std::cout << C_GREEN << "sendAnswer 1" << C_WHITE << std::endl;
         makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");}
