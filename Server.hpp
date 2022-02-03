@@ -12,6 +12,8 @@
 #include <iostream>
 #include <vector>
 
+#define TIME_OUT_FOR_GET_REQUEST 10
+
 class Server {
 public:
     Server();

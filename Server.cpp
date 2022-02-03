@@ -41,11 +41,11 @@ void Server::addServers(const AllConfigs &configs) {
 //Открывает бесконечный цикл опроса наших сокетов и работу с ними
 void Server::run(const AllConfigs &configs, char **env) {
     int resSelect;
-	int g = 0;
 
 	while (!exit) {
-		g++;
 		resSelect = fds.select();
+
+//        std::cout << fds << std::endl;
 
 		if (resSelect <= 0) {
 			handleSelectError(resSelect);
@@ -59,18 +59,32 @@ void Server::run(const AllConfigs &configs, char **env) {
 		for (size_t i = 0; i < sessions.size(); ++i) {
 			try {
 				if (fds.isSetReadFD(sessions[i].get_fd())) {
-					sessions[i].getRequest(configs);
+                    if (sessions[i].no_request() and (sessions[i].time_passed() > TIME_OUT_FOR_GET_REQUEST)) {
+                        std::cout << C_RED << "FD " << sessions[i].get_fd() << " : TIMEOUT "
+                                  << sessions[i].time_passed() << " sec. Connection closed." << C_WHITE << std::endl;
+                        finishSession(i);
+                        continue;
+                    }
+                    if (not sessions[i].is_request_received())
+					    sessions[i].getRequest(configs);
 				}
-				if (fds.isSetWriteFD(sessions[i].get_fd()) && sessions[i].areRespondReady()) {
-                    std::cout << "sessions[i].areRespondReady()" << std::endl;
+				if (fds.isSetWriteFD(sessions[i].get_fd())) {
+                    if (sessions[i].areRespondReady() and not sessions[i].are_need_to_read_cgi()) {
+//                        std::cout << "FD "<<sessions[i].get_fd()<<" areRespondReady()" << std::endl;
 
-					sessions[i].sendAnswer(env);
-					finishSession(i);
-					g = 0;
-				}
-				if (fds.isSetWriteFD(sessions[i].get_fd()) && g > 5000) {
-					finishSession(i);
-					g = 0;
+                        sessions[i].sendAnswer(env);
+                        if (sessions[i].is_answer_sent()) {
+                            finishSession(i);
+                        }
+                    }
+                    else if (sessions[i].are_need_to_read_cgi()){
+
+//                        std::cout << "sessions["<<sessions[i].get_fd()<<"].are_need_to_read_cgi()" << std::endl;
+                        sessions[i].read_cgi();
+                        if (sessions[i].is_answer_sent()) {
+                            finishSession(i);
+                        }
+                    }
 				}
 			} catch (ErrorException &er) {
 				sessions[i].errorPageHandle(er.error_code);
@@ -86,15 +100,18 @@ void Server::run(const AllConfigs &configs, char **env) {
 void Server::connect(Socket &currentSocket) {
 
     int fd;
-    sockaddr inputSocket;
+    sockaddr inputSocket = {};
     socklen_t len;
+
     fd = accept(currentSocket.get_fd(), &inputSocket, &len);
     if (fd > 0) {
+        std::cout << C_GREEN << "FD " << fd << " : OPEN" << C_WHITE << std::endl;
         fds.addFD(fd);
         sessions.push_back(Session(fd, currentSocket));
 	}
-	else
-		std::cout << "ACCEPT ERROR. Cannot create a connection" << std::endl;
+	else {
+        throw std::runtime_error("ACCEPT ERROR. Cannot create a connection");
+    }
 }
 
 void Server::finishSession(size_t i) {

@@ -13,8 +13,9 @@ std::map<std::string, std::string> getArgsFromEncodedString(const std::string &s
 std::map<std::string, std::string> getTypesFromFile(const char *pathToFile);
 
 Session::Session(int fd, const Socket &sock):
-		fd(fd), respondReady(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false),
-		isSGI(false), bodySum(0) {
+		fd(fd), respondReady(false), need_to_read_cgi(false), sesSocket(sock), isChunked(false), contentLength(-1), isHeaderRead(false),
+		isSGI(false), bodySum(0), answer_sent(false), request_received(false){
+    start_time = std::clock();
 }
 
 void Session::parseHeader() {
@@ -124,7 +125,8 @@ void Session::getRequest(const AllConfigs &configs) {
 		config = configs.getRightConfig(header.at("Host:"), sesSocket);
 		if (config.getIsReturn()) {
 			respondReady = true;
-			std::cout << C_MAGENTA << "1 respondReady = true" << C_WHITE << std::endl;
+            request_received = true;
+			std::cout << C_MAGENTA << "FD " << fd <<" : 1 request_received = true" << C_WHITE << std::endl;
 			return;
 		}
 		initializeAndCheckData();
@@ -149,12 +151,16 @@ void Session::getRequest(const AllConfigs &configs) {
 		request.append("\n").append(extraBuff);
 		fileText.append(extraBuff);
 		respondReady = true;
-		std::cout << C_MAGENTA << "2 respondReady = true" << C_WHITE << std::endl;
+        request_received = true;
+		std::cout << C_MAGENTA << "FD " << fd <<" : 2 request_received = true" << C_WHITE << std::endl;
 	}
 	else {
+        request_received = true;
 		respondReady = true;
-		std::cout << C_MAGENTA << "3 respondReady = true" << C_WHITE << std::endl;
+		std::cout << C_MAGENTA << "FD " << fd <<" : 3 request_received = true" << C_WHITE << std::endl;
 	}
+    std::cout << C_YELLOW << "FD " << fd << " :" << C_WHITE << std::endl;
+    std::cout << C_RED << request << C_WHITE << std::endl;
 }
 
 Location Session::getMyLocation(const std::vector<Location> &locations, const std::string &url) {
@@ -213,8 +219,6 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
 	unsigned long ind;
 	std::string key;
 
-	std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
-	std::cout << C_RED << request << C_WHITE << std::endl;
 	std::stringstream response;
 	response << "HTTP/1.1 " << code << " " << status << "\n";
 	if (code == 301) {
@@ -239,6 +243,8 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
     std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
     std::cout << C_BLUE << response.str() << C_WHITE << std::endl;
 	ssize_t length = send(fd, response.str().c_str(), response.str().length(), 0);
+    answer_sent = true;
+    std::cout << C_GREEN << "FD " << fd << " answer_sent = true" << C_WHITE <<std::endl;
 	if (length <= 0)
 		throw ErrorException(500);
 }
@@ -293,6 +299,7 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 
 StringArray cgi_env(std::map<std::string, std::string> header, std::string path, Config conf, std::string argsForCgi, char **env)
 {
+	//TODO in std::map header first element = ""
     StringArray	tmp;
     std::string str;
 
@@ -302,17 +309,18 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     tmp.addString("Script_Name=" + path);
     tmp.addString("Server_Software=webserver");
     tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
+    tmp.addString("REDIRECT_STATUS=CGI");
+    tmp.addString("AllowEncodedSlashes=ON");
     if (header.find("Cookie:") != header.end())
         tmp.addString("HTTP_COOKIE=" + header.at("Cookie:"));
 
     // Добавление переменных из header c префиксом HTTP
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
-    for (begin++; begin != end; ++begin)
-    {
-        if (begin->first == "Method:")
-            continue;
-        tmp.addString("HTTP_" + begin->first + "=" + begin->second);
-    }
+    for (; begin != end; ++begin) {
+		std::string locStr = begin->first;
+		locStr.pop_back();
+        tmp.addString("HTTP_" + locStr + "=" + begin->second);
+	}
 
     // Добавление внешних переменных окружения
     while (env && *env)
@@ -343,12 +351,11 @@ void Session::handleAsCGI(char **env) {
     // config - конфиг, с которым мы работаем на время текущего соединения
     // location - соответственно location, с которым мы работаем
 
+
 	StringArray cgi_env_map = cgi_env(header, path, config, argsForCgiString, env);
-    std::cout << cgi_env_map << std::endl;
+//    std::cout << cgi_env_map << std::endl;
 
-    std::stringstream response_body_stream;
-
-//    std::cout << C_YELLOW << "ЗАШЕЛ"  << C_WHITE <<std::endl;
+//    std::cout << C_YELLOW << "ЗАШЕЛ  FD "  << fd << C_WHITE <<std::endl;
     std::ifstream fin(path);
     if (!fin.is_open())
         throw std::runtime_error("file wasn't opened");
@@ -356,7 +363,7 @@ void Session::handleAsCGI(char **env) {
     if (header.at("Method:") == "POST"){
         pipe(cgi_fd_in);
         pipe(cgi_fd_out);
-        pid_t pid = fork();
+        pid = fork();
         if (pid == 0){
             std::cout << C_GREEN << "before execve" <<  C_WHITE << std::endl;
             close(cgi_fd_out[1]);
@@ -373,22 +380,16 @@ void Session::handleAsCGI(char **env) {
         write(cgi_fd_out[1], fileText.c_str(), fileText.size());
         close(cgi_fd_out[0]);
         close(cgi_fd_out[1]);
-        int exit_code;
-        std::cout << C_GREEN << "before wait" <<  C_WHITE << std::endl;
-        waitpid(pid, &exit_code, 0);
-        std::cout << C_GREEN << "after wait" << C_WHITE << std::endl;
-        char data_buf[READING_BUFF + 1];
-        ssize_t data_length;
-        while ((data_length = read(cgi_fd_in[0], &data_buf, READING_BUFF)) > 0) {
-//        std::cout << data_buf << " : " << data_length << std::endl;
-            data_buf[data_length] = '\0';
-            response_body_stream << data_buf;
-        }
-        close(cgi_fd_in[0]);
+
+//        int exit_code;
+//        std::cout << C_GREEN << "before wait" <<  C_WHITE << std::endl;
+//        waitpid(pid, &exit_code, 0);
+//        std::cout << C_GREEN << "after wait" << C_WHITE << std::endl;
+
     }
     else if (header.at("Method:") == "GET"){
         pipe(cgi_fd_in);
-        pid_t pid = fork();
+        pid = fork();
         if (pid == 0){
             std::cout << C_GREEN << "before execve" <<  C_WHITE << std::endl;
             dup2(cgi_fd_in[1], 1);
@@ -399,31 +400,70 @@ void Session::handleAsCGI(char **env) {
             exit(400);
         }
         close(cgi_fd_in[1]);
-        int exit_code;
-        std::cout << C_GREEN << "before wait" <<  C_WHITE << std::endl;
-        waitpid(pid, &exit_code, 0);
-        std::cout << C_GREEN << "after wait" << C_WHITE << std::endl;
-        char data_buf[READING_BUFF + 1];
-        ssize_t data_length;
-        while ((data_length = read(cgi_fd_in[0], &data_buf, READING_BUFF)) > 0) {
-//        std::cout << data_buf << " : " << data_length << std::endl;
-            data_buf[data_length] = '\0';
-            response_body_stream << data_buf;
-        }
-        close(cgi_fd_in[0]);
+//        int exit_code;
+//        std::cout << C_GREEN << "before wait" <<  C_WHITE << std::endl;
+//        waitpid(pid, &exit_code, 0);
+//        std::cout << C_GREEN << "after wait" << C_WHITE << std::endl;
+
     }
     else{
         throw std::runtime_error("can't execute this method for cgi");
     }
 
-    std::string response_header = response_body_stream.str().substr(0,response_body_stream.str().find("\n\n"));
-    std::string response_body = response_body_stream.str().substr(response_body_stream.str().find("\n\n")+2);
+    std::cout << C_YELLOW << "FD " << fd << " open pid: " << pid << C_WHITE << std::endl;
 
+    need_to_read_cgi = true;
+    respondReady = false;
+    std::cout << "need_to_read_cgi = true" << std::endl;
 
-	makeAndSendResponse(fd, response_body, 200, "OK", response_header);
+}
+
+void Session::read_cgi() {
+
+    if (not need_to_read_cgi) return;
+
+    int status;
+    pid_t res_wait = waitpid(pid, &status, WNOHANG);
+//    std::cout << C_RED << "FD " << fd << " : wait pid: " << pid << " ;res_wait:  " << res_wait << C_WHITE << std::endl;
+    if (res_wait <= 0)
+        return;
+    std::cout << C_YELLOW << "FD " << fd << " : wait pid: " << pid << " ; status:  " << status << C_WHITE << std::endl;
+    std::stringstream cgi_response;
+
+    char data_buf[READING_BUFF + 1];
+    ssize_t data_length;
+    while ((data_length = read(cgi_fd_in[0], &data_buf, READING_BUFF)) > 0) {
+//        std::cout << data_buf << " : " << data_length << std::endl;
+        data_buf[data_length] = '\0';
+        cgi_response << data_buf;
+        std::cout << C_GREEN << data_buf << C_WHITE;
+    }
+
+    if (cgi_response.str().size() == 0){
+        std::cout << C_RED << "read_cgi res_read=" << data_length << " errno=" << errno << " - " << std::strerror(errno) << std::endl;
+        return;
+    }
+
+    need_to_read_cgi = false;
+    close(cgi_fd_in[0]);
+
+    std::string response_header = cgi_response.str().substr(0,cgi_response.str().find("\n\n"));
+    std::string response_body = cgi_response.str().substr(cgi_response.str().find("\n\n")+2);
+
+    std::cout << response_body;
+    std::cout << response_header;
+
+    makeAndSendResponse(fd, response_body, 200, "OK", response_header);
+}
+
+void readUslessRest(int fd) {
+	char buff[2];
+	while (recv(fd, &buff, 1, 0) == 1)
+		continue;
 }
 
 void Session::sendAnswer(char **env) {
+	readUslessRest(fd);
 	if (config.getIsReturn()) {
         std::cout << C_GREEN << "sendAnswer 1" << C_WHITE << std::endl;
         makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");}
@@ -462,6 +502,7 @@ Session::~Session() {
 Session &Session::operator=(const Session &oth) {
 	this->fd = oth.fd;
     this->respondReady = oth.respondReady;
+    this->need_to_read_cgi = oth.need_to_read_cgi;
     this->request = oth.request;
 	this->path = oth.path;
 	this->config = oth.config;
@@ -477,6 +518,9 @@ Session &Session::operator=(const Session &oth) {
 	this->bodySum = oth.bodySum;
 	this->argsForCgi = oth.argsForCgi;
 	this->mimeTypes = oth.mimeTypes;
+    this->start_time = oth.start_time;
+    this->answer_sent = oth.answer_sent;
+    this->request_received = oth.request_received;
 	return *this;
 }
 
@@ -550,6 +594,27 @@ void Session::handleGetRequest(char **env) {
 	else
 		throw ErrorException(404);
 }
+
+int Session::time_passed() const {
+    return     int((clock() - start_time) / CLOCKS_PER_SEC);
+}
+
+bool Session::are_need_to_read_cgi() const {
+    return need_to_read_cgi;
+}
+
+bool Session::is_answer_sent() const {
+    return answer_sent;
+}
+
+bool Session::no_request() const {
+    return request.empty();
+}
+
+bool Session::is_request_received() const {
+    return request_received;
+}
+
 
 std::vector<std::string> split(const std::string& s, char delimiter)
 {

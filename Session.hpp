@@ -20,6 +20,7 @@
 #include <sys/stat.h>
 #include <cstdio>
 #include <string>
+#include <csignal>
 #include "StringArray.hpp"
 #define C_RED "\033[31m"
 #define C_WHITE "\033[0m"
@@ -54,11 +55,20 @@ public:
 	void handleDeleteRequest();
 	std::string openAndReadTheFile(const std::string &);
 	void initializeAndCheckData();
+    void read_cgi();
+    int time_passed() const;
+    bool are_need_to_read_cgi() const;
+    bool is_answer_sent() const;
+    bool no_request() const;
+    bool is_request_received() const;
 
 private:
     int fd;
+    pid_t pid;
     bool respondReady;
+    bool need_to_read_cgi;
     std::string request;
+
 	std::string path;
 	Config config;
 	Location location;
@@ -76,6 +86,10 @@ private:
 	long bodySum;
     int cgi_fd_in[2];
     int cgi_fd_out[2];
+    clock_t start_time;
+    bool answer_sent;
+    bool request_received;
+
 };
 
 
