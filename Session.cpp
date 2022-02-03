@@ -316,8 +316,11 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
 
     // Добавление переменных из header c префиксом HTTP
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
-    for (; begin != end; ++begin)
-        tmp.addString("HTTP_" + begin->first + "=" + begin->second);
+    for (; begin != end; ++begin) {
+		std::string locStr = begin->first;
+		locStr.pop_back();
+        tmp.addString("HTTP_" + locStr + "=" + begin->second);
+	}
 
     // Добавление внешних переменных окружения
     while (env && *env)
@@ -453,8 +456,14 @@ void Session::read_cgi() {
     makeAndSendResponse(fd, response_body, 200, "OK", response_header);
 }
 
+void readUslessRest(int fd) {
+	char buff[2];
+	while (recv(fd, &buff, 1, 0) == 1)
+		continue;
+}
 
 void Session::sendAnswer(char **env) {
+	readUslessRest(fd);
 	if (config.getIsReturn()) {
         std::cout << C_GREEN << "sendAnswer 1" << C_WHITE << std::endl;
         makeAndSendResponse(fd, config.getReturnField(), config.getReturnCode(), "Moved Permanently");}
