@@ -314,8 +314,11 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
 
     // Добавление переменных из header c префиксом HTTP
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
-    for (; begin != end; ++begin)
-        tmp.addString("HTTP_" + begin->first + "=" + begin->second);
+    for (; begin != end; ++begin) {
+		std::string locStr = begin->first;
+		locStr.pop_back();
+        tmp.addString("HTTP_" + locStr + "=" + begin->second);
+	}
 
     // Добавление внешних переменных окружения
     while (env && *env)
