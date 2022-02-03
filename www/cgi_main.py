@@ -6,7 +6,7 @@ import os
 import sys
 
 import time
-time.sleep(5)
+# time.sleep(5)
 
 form = cgi.FieldStorage()
 first_name = form.getvalue("FIRST_NAME", '')
@@ -28,7 +28,7 @@ print()
 print("""
 <html lang="en">
 <head>
-    <link rel="shortcut icon" href="../images/ico_for_py.png">
+    <link rel="shortcut icon" href="../images/ico_1.png">
     <link rel="stylesheet" href="../css/cgi_main.css">
     <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@100;300;400;500;600;700;800&display=swap" rel="stylesheet">
     <meta charset="UTF-8">

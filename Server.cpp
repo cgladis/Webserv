@@ -105,7 +105,7 @@ void Server::connect(Socket &currentSocket) {
 
     fd = accept(currentSocket.get_fd(), &inputSocket, &len);
     if (fd > 0) {
-        std::cout << C_GREEN << "FD " << fd << " open" << C_WHITE << std::endl;
+        std::cout << C_GREEN << "FD " << fd << " : OPEN" << C_WHITE << std::endl;
         fds.addFD(fd);
         sessions.push_back(Session(fd, currentSocket));
 	}
