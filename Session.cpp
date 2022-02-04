@@ -447,11 +447,15 @@ void Session::read_cgi() {
     need_to_read_cgi = false;
     close(cgi_fd_in[0]);
 
-    std::string response_header = cgi_response.str().substr(0,cgi_response.str().find("\n\n"));
-    std::string response_body = cgi_response.str().substr(cgi_response.str().find("\n\n")+2);
+    std::string cgi_response_str = cgi_response.str();
 
-    std::cout << response_body;
-    std::cout << response_header;
+    std::cout << cgi_response_str << std::endl;
+
+    std::string response_header = cgi_response_str.substr(0,cgi_response_str.find("\n\n"));
+    std::string response_body = cgi_response_str.substr(cgi_response_str.find("\n\n")+2);
+
+    std::cout << "BODY: " << response_body << std::endl;
+    std::cout << "HEAD: " << response_header << std::endl;
 
     makeAndSendResponse(fd, response_body, 200, "OK", response_header);
 }
