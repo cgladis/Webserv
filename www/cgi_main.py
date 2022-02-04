@@ -17,7 +17,7 @@ cookie = http.cookies.SimpleCookie(os.environ.get("HTTP_COOKIE"))
 
 'TO HEADER'
 
-if os.environ.get("REQUEST_METHOD") == 'POST':
+if os.environ.get("Request_Method") == 'POST':
     print('Set-cookie: FIRST_NAME="{}"'.format(first_name))
     print('Set-cookie: SECOND_NAME="{}"'.format(second_name))
 print("Content-type: text/html")
@@ -90,7 +90,7 @@ cookie_second_name = cookie.get('SECOND_NAME').value if cookie.get('SECOND_NAME'
 print("""
         <div id = "TestPOST" class="tabcontent">
 """)
-if os.environ.get("REQUEST_METHOD") == 'GET':
+if os.environ.get("Request_Method") == 'GET':
     print("""
         <div class="form">
             <form action="cgi_main.py" method="post">
@@ -106,7 +106,7 @@ if os.environ.get("REQUEST_METHOD") == 'GET':
                     <button type="submit">Send</button>
                 </p>
             </form>""".format(cookie_first_name, cookie_second_name))
-elif os.environ.get("REQUEST_METHOD") == 'POST':
+elif os.environ.get("Request_Method") == 'POST':
 
     print("""
             <br><font size=+5>Thank you for your answers</font><br>
@@ -121,7 +121,7 @@ elif os.environ.get("REQUEST_METHOD") == 'POST':
             </form>""")
 
 else:
-    print('<br><font size=+5>I don\'t know this method', os.environ.get("REQUEST_METHOD"), '</font><br>')
+    print('<br><font size=+5>I don\'t know this method', os.environ.get("Request_Method"), '</font><br>')
     print("""
             <form action="" method="get">
                 <div>
