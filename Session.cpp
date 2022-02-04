@@ -299,7 +299,6 @@ std::string Session::openAndReadTheFile(const std::string &filename) {
 
 StringArray cgi_env(std::map<std::string, std::string> header, std::string path, Config conf, std::string argsForCgi, char **env)
 {
-	//TODO in std::map header first element = ""
     StringArray	tmp;
     std::string str;
 
@@ -427,6 +426,8 @@ void Session::read_cgi() {
 //    std::cout << C_RED << "FD " << fd << " : wait pid: " << pid << " ;res_wait:  " << res_wait << C_WHITE << std::endl;
     if (res_wait <= 0)
         return;
+    if (status != 0)
+        throw ErrorException(status);
     std::cout << C_YELLOW << "FD " << fd << " : wait pid: " << pid << " ; status:  " << status << C_WHITE << std::endl;
     std::stringstream cgi_response;
 
