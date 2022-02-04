@@ -302,14 +302,19 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     StringArray	tmp;
     std::string str;
 
+
+    (void )header;
+    (void )path;
+    (void )argsForCgi;
+    (void )env;
 	tmp.addString("Auth_Type=Basic");
     tmp.addString("Gateway_Interface=CGI/1.1");
     tmp.addString("Remote_User=");
     tmp.addString("Script_Name=" + path);
     tmp.addString("Server_Software=webserver");
-    tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
-    tmp.addString("REDIRECT_STATUS=CGI");
-    tmp.addString("AllowEncodedSlashes=ON");
+//    tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
+//    tmp.addString("REDIRECT_STATUS=CGI");
+//    tmp.addString("AllowEncodedSlashes=ON");
     if (header.find("Cookie:") != header.end())
         tmp.addString("HTTP_COOKIE=" + header.at("Cookie:"));
 
@@ -332,8 +337,8 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     }
 
     // Добавление аргументов при GET запросе
-    if (header.at("Method:") == "GET")
-        tmp.addString("QUERY_STRING=" + argsForCgi);
+//    if (header.at("Method:") == "GET")
+//        tmp.addString("QUERY_STRING=" + argsForCgi);
 
     return tmp;
     (void )conf;
@@ -364,11 +369,14 @@ void Session::handleAsCGI(char **env) {
         pipe(cgi_fd_out);
         pid = fork();
         if (pid == 0){
-            std::cout << C_GREEN << "before execve" <<  C_WHITE << std::endl;
+            std::cout << C_GREEN << "before execve " << path.c_str() << C_WHITE << std::endl;
             close(cgi_fd_out[1]);
             dup2(cgi_fd_out[0], 0);
             dup2(cgi_fd_in[1], 1);
             execve(path.c_str(), NULL, cgi_env_map.c_Arr());
+//            execve(path.c_str(), NULL, NULL);
+            std::cout << C_RED << "ОШИБКА" << C_WHITE << std::endl;
+            std::cout << strerror(errno) <<std::endl;
             std::cout << C_GREEN << "after execve" <<  C_WHITE << std::endl;
             close(cgi_fd_out[0]);
             close(cgi_fd_in[0]);
@@ -380,29 +388,23 @@ void Session::handleAsCGI(char **env) {
         close(cgi_fd_out[0]);
         close(cgi_fd_out[1]);
 
-//        int exit_code;
-//        std::cout << C_GREEN << "before wait" <<  C_WHITE << std::endl;
-//        waitpid(pid, &exit_code, 0);
-//        std::cout << C_GREEN << "after wait" << C_WHITE << std::endl;
 
     }
     else if (header.at("Method:") == "GET"){
         pipe(cgi_fd_in);
         pid = fork();
         if (pid == 0){
-            std::cout << C_GREEN << "before execve" <<  C_WHITE << std::endl;
+            std::cout << C_GREEN << "before execve " << path.c_str() << C_WHITE << std::endl;
             dup2(cgi_fd_in[1], 1);
             execve(path.c_str(), NULL, cgi_env_map.c_Arr());
+//            execve(path.c_str(), NULL, NULL);
+            std::cout << C_RED << "ОШИБКА " << C_WHITE << strerror(errno) <<std::endl;
             std::cout << C_GREEN << "after execve" <<  C_WHITE << std::endl;
             close(cgi_fd_in[0]);
             close(cgi_fd_in[1]);
             exit(400);
         }
         close(cgi_fd_in[1]);
-//        int exit_code;
-//        std::cout << C_GREEN << "before wait" <<  C_WHITE << std::endl;
-//        waitpid(pid, &exit_code, 0);
-//        std::cout << C_GREEN << "after wait" << C_WHITE << std::endl;
 
     }
     else{
