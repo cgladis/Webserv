@@ -304,7 +304,6 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
 
 	tmp.addString("Auth_Type=Basic");
     tmp.addString("Gateway_Interface=CGI/1.1");
-    tmp.addString("Remote_User=");
     tmp.addString("Script_Name=" + path);
     tmp.addString("Server_Software=webserver");
     tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
@@ -317,9 +316,12 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
     for (; begin != end; ++begin) {
 		std::string locStr = begin->first;
-		locStr.pop_back();
-        tmp.addString("HTTP_" + locStr + "=" + begin->second);
-	}
+        if (!locStr.empty())
+        {
+            locStr.pop_back();
+            tmp.addString("HTTP_" + locStr + "=" + begin->second);
+        }
+    }
 
     // Добавление внешних переменных окружения
     while (env && *env)
