@@ -309,10 +309,10 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     (void )env;
 	tmp.addString("Auth_Type=Basic");
     tmp.addString("Gateway_Interface=CGI/1.1");
-    tmp.addString("Script_Name=" + path);
+    tmp.addString("SCRIPT_FILENAME=" + path);
     tmp.addString("Server_Software=webserver");
-//    tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
-//    tmp.addString("REDIRECT_STATUS=CGI");
+    tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
+    tmp.addString("REDIRECT_STATUS=CGI");
 //    tmp.addString("AllowEncodedSlashes=ON");
     if (header.find("Cookie:") != header.end())
         tmp.addString("HTTP_COOKIE=" + header.at("Cookie:"));
