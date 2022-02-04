@@ -437,7 +437,7 @@ void Session::read_cgi() {
 //        std::cout << data_buf << " : " << data_length << std::endl;
         data_buf[data_length] = '\0';
         cgi_response << data_buf;
-        std::cout << C_GREEN << data_buf << C_WHITE;
+        std::cout << C_MINT << data_buf << C_WHITE;
     }
 
     if (cgi_response.str().size() == 0){
@@ -450,13 +450,14 @@ void Session::read_cgi() {
 
     std::string cgi_response_str = cgi_response.str();
 
-    std::cout << cgi_response_str << std::endl;
+//    std::cout << cgi_response_str << std::endl;
 
     std::string response_header = cgi_response_str.substr(0,cgi_response_str.find("\n\n"));
     std::string response_body = cgi_response_str.substr(cgi_response_str.find("\n\n")+2);
 
-    std::cout << "BODY: " << response_body << std::endl;
-    std::cout << "HEAD: " << response_header << std::endl;
+    std::cout << C_YELLOW << "HEAD: \n" << C_WHITE << response_header << std::endl;
+    std::cout << C_YELLOW << "BODY: \n" << C_WHITE << response_body << std::endl;
+
 
     makeAndSendResponse(fd, response_body, 200, "OK", response_header);
 }

@@ -58,13 +58,13 @@ void Server::run(const AllConfigs &configs, char **env) {
 		}
 		for (size_t i = 0; i < sessions.size(); ++i) {
 			try {
+                if (sessions[i].no_request() and (sessions[i].time_passed() > TIME_OUT_FOR_GET_REQUEST)) {
+                    std::cout << C_RED << "FD " << sessions[i].get_fd() << " : TIMEOUT "
+                              << sessions[i].time_passed() << " sec. Connection closed." << C_WHITE << std::endl;
+                    finishSession(i);
+                    continue;
+                }
 				if (fds.isSetReadFD(sessions[i].get_fd())) {
-                    if (sessions[i].no_request() and (sessions[i].time_passed() > TIME_OUT_FOR_GET_REQUEST)) {
-                        std::cout << C_RED << "FD " << sessions[i].get_fd() << " : TIMEOUT "
-                                  << sessions[i].time_passed() << " sec. Connection closed." << C_WHITE << std::endl;
-                        finishSession(i);
-                        continue;
-                    }
                     if (not sessions[i].is_request_received())
 					    sessions[i].getRequest(configs);
 				}
@@ -117,7 +117,7 @@ void Server::connect(Socket &currentSocket) {
 void Server::finishSession(size_t i) {
 //    std::cout << "FD " << sessions[i].get_fd() << " CLOSED" <<std::endl;
     fds.deleteFD(sessions[i].get_fd());
-    std::cout << "FD " << sessions[i].get_fd() << " CLOSED" <<std::endl;
+    std::cout << C_RED << "FD " << sessions[i].get_fd() << " CLOSED"<< C_WHITE <<std::endl;
 	close(sessions[i].get_fd());
 //	std::cout << "SESSION CLOSED. FD: " << sessions[i].get_fd() << std::endl;
 	sessions.erase(sessions.begin() + i);
