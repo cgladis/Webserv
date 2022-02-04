@@ -303,19 +303,17 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     std::string str;
 
 
-    (void )header;
-    (void )path;
-    (void )argsForCgi;
-    (void )env;
-	tmp.addString("Auth_Type=Basic");
-    tmp.addString("Gateway_Interface=CGI/1.1");
+//	tmp.addString("Auth_Type=Basic");
+//    tmp.addString("Gateway_Interface=CGI/1.1");
     tmp.addString("SCRIPT_FILENAME=" + path);
     tmp.addString("Server_Software=webserver");
     tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
     tmp.addString("REDIRECT_STATUS=CGI");
 //    tmp.addString("AllowEncodedSlashes=ON");
-    if (header.find("Cookie:") != header.end())
+    if (header.find("Cookie:") != header.end()) {
         tmp.addString("HTTP_COOKIE=" + header.at("Cookie:"));
+        tmp.addString("COOKIE=" + header.at("Cookie:"));
+    }
 
     // Добавление переменных из header c префиксом HTTP
     std::map<std::string, std::string>::iterator	begin = header.begin(), end = header.end();
@@ -339,8 +337,8 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     }
 
     // Добавление аргументов при GET запросе
-//    if (header.at("Method:") == "GET")
-//        tmp.addString("QUERY_STRING=" + argsForCgi);
+    if (header.at("Method:") == "GET")
+        tmp.addString("QUERY_STRING=" + argsForCgi);
 
     return tmp;
     (void )conf;

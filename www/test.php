@@ -1,8 +1,20 @@
-#!/System/Volumes/Data/opt/homebrew/bin/php-cgi
+#!/Users/ashorshin/.brew/bin/php-cgi
 
 <?php
 session_start();
-echo "<h1>I'M WORKING!</h1>\n"
+
+if (!isset($_SESSION['count']))
+{
+  $_SESSION['count'] = 1;
+}
+else
+{
+  ++$_SESSION['count'];
+}
+
+echo $_SESSION['count'];
+
 ?>
 
-#!/Users/ashorshin/.brew/bin/php-cgi
+
+
