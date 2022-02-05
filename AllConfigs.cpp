@@ -245,8 +245,9 @@ void AllConfigs::makeUniqueIpPortArray() {
 		ipPort = conf1.getIP() + ":" + std::to_string(conf1.getPort());
 		if (std::find(uniqeIpPort.begin(), uniqeIpPort.end(), ipPort) == uniqeIpPort.end())
 			uniqeIpPort.push_back(ipPort);
-		else
-			continue;
+		else {
+			throw std::runtime_error("same port");
+		}
 	}
 }
 
