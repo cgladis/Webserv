@@ -1,3 +1,4 @@
+#! /Users/meunostu/.brew/Cellar/php/8.1.2/bin/php-cgi
 <?php
 session_start();
 ?>
