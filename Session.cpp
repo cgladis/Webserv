@@ -357,6 +357,7 @@ void Session::handleAsCGI(char **env) {
 
 
 	StringArray cgi_env_map = cgi_env(header, path, config, argsForCgiString, env);
+
 //    std::cout << cgi_env_map << std::endl;
 
 //    std::cout << C_YELLOW << "ЗАШЕЛ  FD "  << fd << C_WHITE <<std::endl;
@@ -376,7 +377,6 @@ void Session::handleAsCGI(char **env) {
             execve(path.c_str(), NULL, cgi_env_map.c_Arr());
 //            execve(path.c_str(), NULL, NULL);
             std::cout << C_RED << "ОШИБКА" << C_WHITE << std::endl;
-            std::cout << strerror(errno) <<std::endl;
             std::cout << C_GREEN << "after execve" <<  C_WHITE << std::endl;
             close(cgi_fd_out[0]);
             close(cgi_fd_in[0]);
@@ -391,14 +391,13 @@ void Session::handleAsCGI(char **env) {
 
     }
     else if (header.at("Method:") == "GET"){
-        pipe(cgi_fd_in);
+        pipe(	cgi_fd_in);
         pid = fork();
         if (pid == 0){
             std::cout << C_GREEN << "before execve " << path.c_str() << C_WHITE << std::endl;
             dup2(cgi_fd_in[1], 1);
             execve(path.c_str(), NULL, cgi_env_map.c_Arr());
 //            execve(path.c_str(), NULL, NULL);
-            std::cout << C_RED << "ОШИБКА " << C_WHITE << strerror(errno) <<std::endl;
             std::cout << C_GREEN << "after execve" <<  C_WHITE << std::endl;
             close(cgi_fd_in[0]);
             close(cgi_fd_in[1]);
@@ -443,7 +442,6 @@ void Session::read_cgi() {
     }
 
     if (cgi_response.str().size() == 0){
-        std::cout << C_RED << "read_cgi res_read=" << data_length << " errno=" << errno << " - " << std::strerror(errno) << std::endl;
         return;
     }
 
