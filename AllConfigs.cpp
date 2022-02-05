@@ -247,7 +247,6 @@ void AllConfigs::makeUniqueIpPortArray() {
 			uniqeIpPort.push_back(ipPort);
 		else {
 			throw std::runtime_error("same port");
-			continue;
 		}
 	}
 }
