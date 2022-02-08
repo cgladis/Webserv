@@ -159,7 +159,7 @@ void Session::getRequest(const AllConfigs &configs) {
 		respondReady = true;
 		std::cout << C_MAGENTA << "FD " << fd <<" : 3 request_received = true" << C_WHITE << std::endl;
 	}
-    std::cout << C_YELLOW << "FD " << fd << " :" << C_WHITE << std::endl;
+    std::cout << C_YELLOW << "FD " << fd << " : REQUEST :" << C_WHITE << std::endl;
     std::cout << C_RED << request << C_WHITE << std::endl;
 }
 
@@ -240,7 +240,7 @@ void Session::makeAndSendResponse(int fd, const std::string& response_body, unsi
 	}
     response << response_header << "\n\n" << (nobody ? "": response_body);
 
-    std::cout << C_YELLOW << "FD: " << fd << C_WHITE << std::endl;
+    std::cout << C_YELLOW << "FD " << fd << " : RESPONSE :" << C_WHITE << std::endl;
     std::cout << C_BLUE << response.str() << C_WHITE << std::endl;
 	ssize_t length = send(fd, response.str().c_str(), response.str().length(), 0);
     answer_sent = true;
@@ -438,7 +438,7 @@ void Session::read_cgi() {
 //        std::cout << data_buf << " : " << data_length << std::endl;
         data_buf[data_length] = '\0';
         cgi_response << data_buf;
-        std::cout << C_MINT << data_buf << C_WHITE;
+//        std::cout << C_MINT << data_buf << C_WHITE;
     }
 
     if (cgi_response.str().size() == 0){
@@ -455,8 +455,8 @@ void Session::read_cgi() {
     std::string response_header = cgi_response_str.substr(0,cgi_response_str.find("\n\n"));
     std::string response_body = cgi_response_str.substr(cgi_response_str.find("\n\n")+2);
 
-    std::cout << C_YELLOW << "HEAD: \n" << C_WHITE << response_header << std::endl;
-    std::cout << C_YELLOW << "BODY: \n" << C_WHITE << response_body << std::endl;
+//    std::cout << C_YELLOW << "HEAD: \n" << C_WHITE << response_header << std::endl;
+//    std::cout << C_YELLOW << "BODY: \n" << C_WHITE << response_body << std::endl;
 
 
     makeAndSendResponse(fd, response_body, 200, "OK", response_header);
