@@ -303,8 +303,9 @@ StringArray cgi_env(std::map<std::string, std::string> header, std::string path,
     std::string str;
 
 
-//	tmp.addString("Auth_Type=Basic");
-//    tmp.addString("Gateway_Interface=CGI/1.1");
+	tmp.addString("Auth_Type=Basic");
+    tmp.addString("Gateway_Interface=CGI/1.1");
+    tmp.addString("SCRIPT_NAME=" + path);
     tmp.addString("SCRIPT_FILENAME=" + path);
     tmp.addString("Server_Software=webserver");
     tmp.addString("REQUEST_METHOD=" + header.at("Method:"));
